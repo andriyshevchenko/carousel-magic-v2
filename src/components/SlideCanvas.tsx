@@ -317,7 +317,11 @@ function CodeSlide({ slide, theme, fontSet, scale, isTall }: { slide: Slide; the
   const headingSize = isTall ? 52 : 42;
   const bodySize = isTall ? 34 : 30;
   const bulletSize = isTall ? 32 : 28;
-  const maxTextHeight = isTall ? 300 : 220;
+  const maxTextHeight = isTall ? 340 : 240;
+  // Format-adaptive spacing: more breathing room on portrait
+  const headingGap = isTall ? 28 : 20;
+  const bulletGap = isTall ? 16 : 12;
+  const textToCodeGap = isTall ? 32 : 24;
 
   return (
     <div style={{ width: '94%', display: 'flex', flexDirection: 'column' as const, overflow: 'hidden' }}>
@@ -328,7 +332,7 @@ function CodeSlide({ slide, theme, fontSet, scale, isTall }: { slide: Slide; the
           fontSize: bodySize * scale,
           lineHeight: 1.45,
           color: theme.fg,
-          marginBottom: 18 * scale,
+          marginBottom: textToCodeGap * scale,
           overflow: 'hidden',
           maxHeight: maxTextHeight * scale,
           wordBreak: 'break-word' as const,
@@ -345,7 +349,7 @@ function CodeSlide({ slide, theme, fontSet, scale, isTall }: { slide: Slide; the
                   fontSize: headingSize * scale,
                   fontWeight: 700,
                   color: theme.fg,
-                  marginBottom: 12 * scale,
+                  marginBottom: headingGap * scale,
                   lineHeight: 1.2,
                 }}>
                   <RichText text={line.replace(/^#+\s*/, '')} theme={theme} fontSet={fontSet} scale={scale} fontSize={headingSize} />
@@ -359,7 +363,7 @@ function CodeSlide({ slide, theme, fontSet, scale, isTall }: { slide: Slide; the
                   display: 'flex',
                   alignItems: 'flex-start',
                   gap: 12 * scale,
-                  marginBottom: 8 * scale,
+                  marginBottom: bulletGap * scale,
                   paddingLeft: 4 * scale,
                 }}>
                   <span style={{

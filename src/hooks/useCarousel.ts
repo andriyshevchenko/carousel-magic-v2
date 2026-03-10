@@ -23,7 +23,7 @@ function defaultSlides(): Slide[] {
         {
             id: uid(),
             type: 'hook',
-            title: 'How I Built a Multi-Agent\nApp with Semantic Kernel',
+            title: 'How I Built a Multi-Agent App\nwith Semantic Kernel',
             subtitle: 'A step-by-step walkthrough',
         },
         {
@@ -44,6 +44,7 @@ function defaultSlides(): Slide[] {
             type: 'code',
             code: `// Define the agent\nvar agent = new ChatCompletionAgent()\n{\n    Name = "CodeReviewer",\n    Instructions = """\n        You are a senior code reviewer.\n        Focus on: performance, security,\n        and clean code principles.\n        """,\n    Kernel = kernel\n};`,
             codeLang: 'csharp',
+            codeTextAbove: '# Defining an Agent\n- Each agent gets a **Name** and **Instructions**\n- The `Kernel` provides LLM + plugin access',
         },
         {
             id: uid(),
