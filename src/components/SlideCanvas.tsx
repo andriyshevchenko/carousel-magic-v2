@@ -134,7 +134,7 @@ export default function SlideCanvas({ slide, config, slideIndex, totalSlides, re
           <ContentSlide slide={slide} theme={theme} fontSet={fontSet} scale={scale} />
         )}
         {slide.type === 'code' && (
-          <CodeSlide slide={slide} theme={theme} fontSet={fontSet} scale={scale} />
+          <CodeSlide slide={slide} theme={theme} fontSet={fontSet} scale={scale} isTall={config.format === '1080x1350'} />
         )}
         {slide.type === 'cta' && (
           <CtaSlide slide={slide} theme={theme} fontSet={fontSet} scale={scale} config={config} />
@@ -312,19 +312,25 @@ function ContentSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: T
   );
 }
 
-function CodeSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: Theme; fontSet: FontSet; scale: number }) {
+function CodeSlide({ slide, theme, fontSet, scale, isTall }: { slide: Slide; theme: Theme; fontSet: FontSet; scale: number; isTall: boolean }) {
+  // Format-adaptive typography: larger on 1080×1350, smaller on 1080×1080
+  const headingSize = isTall ? 52 : 42;
+  const bodySize = isTall ? 34 : 30;
+  const bulletSize = isTall ? 32 : 28;
+  const maxTextHeight = isTall ? 300 : 220;
+
   return (
     <div style={{ width: '94%', display: 'flex', flexDirection: 'column' as const, overflow: 'hidden' }}>
       {/* Arbitrary text above the code block */}
       {slide.codeTextAbove && (
         <div style={{
           fontFamily: `'${fontSet.body}', sans-serif`,
-          fontSize: 28 * scale,
+          fontSize: bodySize * scale,
           lineHeight: 1.45,
           color: theme.fg,
           marginBottom: 18 * scale,
           overflow: 'hidden',
-          maxHeight: 220 * scale,
+          maxHeight: maxTextHeight * scale,
           wordBreak: 'break-word' as const,
           overflowWrap: 'anywhere' as const,
           flexShrink: 1,
@@ -336,13 +342,13 @@ function CodeSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: Them
               return (
                 <div key={i} style={{
                   fontFamily: `'${fontSet.heading}', sans-serif`,
-                  fontSize: 32 * scale,
+                  fontSize: headingSize * scale,
                   fontWeight: 700,
                   color: theme.fg,
                   marginBottom: 12 * scale,
                   lineHeight: 1.2,
                 }}>
-                  <RichText text={line.replace(/^#+\s*/, '')} theme={theme} fontSet={fontSet} scale={scale} fontSize={32} />
+                  <RichText text={line.replace(/^#+\s*/, '')} theme={theme} fontSet={fontSet} scale={scale} fontSize={headingSize} />
                 </div>
               );
             }
@@ -360,17 +366,17 @@ function CodeSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: Them
                     color: theme.accent,
                     fontWeight: 700,
                     flexShrink: 0,
-                    fontSize: 26 * scale,
+                    fontSize: bulletSize * scale,
                     lineHeight: '1.45',
                   }}>▸</span>
-                  <RichText text={bulletText} theme={theme} fontSet={fontSet} scale={scale} fontSize={28} />
+                  <RichText text={bulletText} theme={theme} fontSet={fontSet} scale={scale} fontSize={bodySize} />
                 </div>
               );
             }
             if (!line.trim()) return <div key={i} style={{ height: 8 * scale }} />;
             return (
               <div key={i} style={{ marginBottom: 6 * scale }}>
-                <RichText text={line} theme={theme} fontSet={fontSet} scale={scale} fontSize={28} />
+                <RichText text={line} theme={theme} fontSet={fontSet} scale={scale} fontSize={bodySize} />
               </div>
             );
           })}
@@ -388,12 +394,12 @@ function CodeSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: Them
       {slide.codeTextBelow && (
         <div style={{
           fontFamily: `'${fontSet.body}', sans-serif`,
-          fontSize: 24 * scale,
+          fontSize: (bodySize - 4) * scale,
           lineHeight: 1.45,
           color: theme.muted,
           marginTop: 16 * scale,
           overflow: 'hidden',
-          maxHeight: 120 * scale,
+          maxHeight: (isTall ? 160 : 120) * scale,
           wordBreak: 'break-word' as const,
           overflowWrap: 'anywhere' as const,
           flexShrink: 1,
@@ -405,13 +411,13 @@ function CodeSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: Them
               return (
                 <div key={i} style={{
                   fontFamily: `'${fontSet.heading}', sans-serif`,
-                  fontSize: 26 * scale,
+                  fontSize: (bodySize - 2) * scale,
                   fontWeight: 700,
                   color: theme.fg,
                   marginBottom: 8 * scale,
                   lineHeight: 1.3,
                 }}>
-                  <RichText text={line.replace(/^#+\s*/, '')} theme={theme} fontSet={fontSet} scale={scale} fontSize={26} />
+                  <RichText text={line.replace(/^#+\s*/, '')} theme={theme} fontSet={fontSet} scale={scale} fontSize={bodySize - 2} />
                 </div>
               );
             }
@@ -429,17 +435,17 @@ function CodeSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: Them
                     color: theme.accent,
                     fontWeight: 700,
                     flexShrink: 0,
-                    fontSize: 22 * scale,
+                    fontSize: (bulletSize - 4) * scale,
                     lineHeight: '1.45',
                   }}>▸</span>
-                  <RichText text={bulletText} theme={theme} fontSet={fontSet} scale={scale} fontSize={24} />
+                  <RichText text={bulletText} theme={theme} fontSet={fontSet} scale={scale} fontSize={bodySize - 4} />
                 </div>
               );
             }
             if (!line.trim()) return <div key={i} style={{ height: 6 * scale }} />;
             return (
               <div key={i} style={{ marginBottom: 4 * scale }}>
-                <RichText text={line} theme={theme} fontSet={fontSet} scale={scale} fontSize={24} />
+                <RichText text={line} theme={theme} fontSet={fontSet} scale={scale} fontSize={bodySize - 4} />
               </div>
             );
           })}
