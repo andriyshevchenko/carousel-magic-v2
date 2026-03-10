@@ -1,6 +1,6 @@
-import type { Theme, FontSet, Slide, SlideFormat, CarouselConfig } from '../types';
-import { getTheme } from '../data/themes';
 import { FONT_SETS } from '../data/fonts';
+import { getTheme } from '../data/themes';
+import type { CarouselConfig, FontSet, Slide, Theme } from '../types';
 import CodeBlock from './CodeBlock';
 
 interface SlideCanvasProps {
@@ -15,7 +15,7 @@ interface SlideCanvasProps {
 }
 
 export default function SlideCanvas({ slide, config, slideIndex, totalSlides, renderWidth, fullSize }: SlideCanvasProps) {
-  const theme = getTheme(config.themeId);
+  const rawTheme = getTheme(config.themeId);
   const fontSet = FONT_SETS.find(f => f.id === config.fontSetId) ?? FONT_SETS[0];
   const [canvasW, canvasH] = config.format === '1080x1350' ? [1080, 1350] : [1080, 1080];
   const scale = fullSize ? 1 : renderWidth / canvasW;
@@ -23,7 +23,14 @@ export default function SlideCanvas({ slide, config, slideIndex, totalSlides, re
   const w = fullSize ? canvasW : renderWidth;
   const h = fullSize ? canvasH : canvasH * scale;
 
-  const isGradient = theme.bg.startsWith('linear-gradient');
+  const isGradient = rawTheme.bg.startsWith('linear-gradient');
+
+  // Derive a contrast-safe theme: ensure muted text is readable against the background
+  const bgForContrast = isGradient ? '#1a1a2e' : rawTheme.bg; // approximate gradient bg for contrast calc
+  const theme: typeof rawTheme = {
+    ...rawTheme,
+    muted: ensureContrast(rawTheme.muted, bgForContrast, 4),
+  };
 
   return (
     <div
@@ -60,6 +67,7 @@ export default function SlideCanvas({ slide, config, slideIndex, totalSlides, re
           display: 'flex',
           alignItems: 'center',
           gap: 14 * scale,
+          zIndex: 10,
         }}>
           <div style={{
             width: 60 * scale,
@@ -101,24 +109,7 @@ export default function SlideCanvas({ slide, config, slideIndex, totalSlides, re
         </div>
       )}
 
-      {/* ── Author handle (bottom-left) ── */}
-      {config.showAuthorBadge && (
-        <div style={{
-          position: 'absolute',
-          bottom: 24 * scale,
-          left: 36 * scale,
-          fontSize: 15 * scale,
-          color: theme.muted,
-          fontWeight: 500,
-          fontFamily: `'${fontSet.body}', sans-serif`,
-          opacity: 0.5,
-          display: 'flex',
-          alignItems: 'center',
-          height: 52 * scale,
-        }}>
-          {config.authorHandle}
-        </div>
-      )}
+      {/* ── Author handle (bottom-left) ── removed: duplicates top badge info */}
 
       {/* ── Slide content ── */}
       <div style={{
@@ -128,9 +119,12 @@ export default function SlideCanvas({ slide, config, slideIndex, totalSlides, re
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: slide.type === 'code'
-          ? `${80 * scale}px ${32 * scale}px ${50 * scale}px`
-          : `${80 * scale}px ${60 * scale}px ${60 * scale}px`,
+        padding: (() => {
+          const top = (config.showAuthorBadge ? 110 : 80) * scale;
+          const sides = (slide.type === 'code' ? 48 : 60) * scale;
+          const bottom = 100 * scale;
+          return `${top}px ${sides}px ${bottom}px`;
+        })(),
         overflow: 'hidden',
       }}>
         {slide.type === 'hook' && (
@@ -151,8 +145,9 @@ export default function SlideCanvas({ slide, config, slideIndex, totalSlides, re
       {config.showNavDots && (
         <div style={{
           position: 'absolute',
-          bottom: 30 * scale,
+          bottom: 28 * scale,
           left: '50%',
+          zIndex: 10,
           transform: 'translateX(-50%)',
           display: 'flex',
           gap: 8 * scale,
@@ -177,27 +172,27 @@ export default function SlideCanvas({ slide, config, slideIndex, totalSlides, re
       {config.showSlideNumbers && (
         <div style={{
           position: 'absolute',
-          bottom: 24 * scale,
-          right: config.showSwipeHint ? 100 * scale : 36 * scale,
+          bottom: 28 * scale,
+          right: (config.showSwipeHint && slideIndex < totalSlides - 1) ? 100 * scale : 36 * scale,
           fontSize: 14 * scale,
           color: theme.muted,
           fontWeight: 500,
           fontFamily: `'${fontSet.body}', sans-serif`,
-          opacity: 0.5,
+          opacity: 0.7,
           display: 'flex',
           alignItems: 'center',
-          height: 52 * scale,
-        }}>
+          height: 52 * scale,          zIndex: 10,        }}>
           {slideIndex + 1}/{totalSlides}
         </div>
       )}
 
-      {/* ── Swipe / Next button (bottom-right, all slides) ── */}
-      {config.showSwipeHint && (
+      {/* ── Swipe / Next button (hidden on last slide) ── */}
+      {config.showSwipeHint && slideIndex < totalSlides - 1 && (
         <div style={{
           position: 'absolute',
-          bottom: 24 * scale,
+          bottom: 28 * scale,
           right: 32 * scale,
+          zIndex: 10,
           width: 52 * scale,
           height: 52 * scale,
           borderRadius: '50%',
@@ -224,13 +219,13 @@ export default function SlideCanvas({ slide, config, slideIndex, totalSlides, re
 
 function HookSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: Theme; fontSet: FontSet; scale: number }) {
   return (
-    <div style={{ textAlign: 'center', maxWidth: '88%' }}>
+    <div style={{ textAlign: 'center', maxWidth: '86%' }}>
       <h1 style={{
         fontFamily: `'${fontSet.heading}', sans-serif`,
-        fontSize: 60 * scale,
+        fontSize: 84 * scale,
         fontWeight: 800,
-        lineHeight: 1.12,
-        color: theme.fg,
+        lineHeight: 1.08,
+        color: brightenColor(theme.fg, 1.25),
         margin: 0,
         whiteSpace: 'pre-line',
       }}>
@@ -239,10 +234,10 @@ function HookSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: Them
       {slide.subtitle && (
         <p style={{
           fontFamily: `'${fontSet.body}', sans-serif`,
-          fontSize: 26 * scale,
+          fontSize: 34 * scale,
           color: theme.muted,
-          marginTop: 22 * scale,
-          lineHeight: 1.4,
+          marginTop: 28 * scale,
+          lineHeight: 1.35,
           fontWeight: 400,
         }}>
           {slide.subtitle}
@@ -250,11 +245,11 @@ function HookSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: Them
       )}
       {/* Decorative accent line */}
       <div style={{
-        width: 60 * scale,
-        height: 4 * scale,
-        borderRadius: 2 * scale,
+        width: 180 * scale,
+        height: 6 * scale,
+        borderRadius: 3 * scale,
         background: theme.accent,
-        margin: `${24 * scale}px auto 0`,
+        margin: `${28 * scale}px auto 0`,
       }} />
     </div>
   );
@@ -266,22 +261,22 @@ function ContentSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: T
       {slide.title && (
         <h2 style={{
           fontFamily: `'${fontSet.heading}', sans-serif`,
-          fontSize: 38 * scale,
+          fontSize: 52 * scale,
           fontWeight: 700,
           color: theme.fg,
           margin: 0,
-          marginBottom: 28 * scale,
-          lineHeight: 1.2,
+          marginBottom: 36 * scale,
+          lineHeight: 1.15,
         }}>
-          <span style={{ color: theme.accent, marginRight: 8 * scale }}>—</span>
-          {slide.title}
+          <span style={{ color: theme.accent, marginRight: 12 * scale }}>—</span>
+          <RichText text={slide.title} theme={theme} fontSet={fontSet} scale={scale} fontSize={52} />
         </h2>
       )}
       {slide.body && (
         <div style={{
           fontFamily: `'${fontSet.body}', sans-serif`,
-          fontSize: 22 * scale,
-          lineHeight: 1.7,
+          fontSize: 34 * scale,
+          lineHeight: 1.55,
           color: theme.fg,
           whiteSpace: 'pre-line',
         }}>
@@ -291,22 +286,22 @@ function ContentSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: T
               <div key={i} style={{
                 display: 'flex',
                 alignItems: 'flex-start',
-                gap: 12 * scale,
-                marginBottom: 12 * scale,
+                gap: 14 * scale,
+                marginBottom: 20 * scale,
               }}>
                 {isBullet && (
                   <span style={{
                     color: theme.accent,
                     fontWeight: 700,
                     flexShrink: 0,
-                    fontSize: 22 * scale,
-                    lineHeight: '1.7',
+                    fontSize: 34 * scale,
+                    lineHeight: '1.55',
                   }}>
                     ▸
                   </span>
                 )}
-                <span style={{ color: isBullet ? theme.fg : theme.fg }}>
-                  {isBullet ? line.replace(/^[•\-*]\s*/, '') : line}
+                <span style={{ color: theme.fg }}>
+                  <RichText text={isBullet ? line.replace(/^[•\-*]\s*/, '') : line} theme={theme} fontSet={fontSet} scale={scale} fontSize={34} />
                 </span>
               </div>
             );
@@ -324,11 +319,12 @@ function CodeSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: Them
       {slide.codeTextAbove && (
         <div style={{
           fontFamily: `'${fontSet.body}', sans-serif`,
-          fontSize: 20 * scale,
-          lineHeight: 1.5,
+          fontSize: 28 * scale,
+          lineHeight: 1.45,
           color: theme.fg,
-          marginBottom: 16 * scale,
+          marginBottom: 18 * scale,
           overflow: 'hidden',
+          maxHeight: 220 * scale,
           wordBreak: 'break-word' as const,
           overflowWrap: 'anywhere' as const,
           flexShrink: 1,
@@ -340,13 +336,13 @@ function CodeSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: Them
               return (
                 <div key={i} style={{
                   fontFamily: `'${fontSet.heading}', sans-serif`,
-                  fontSize: 22 * scale,
+                  fontSize: 32 * scale,
                   fontWeight: 700,
                   color: theme.fg,
-                  marginBottom: 10 * scale,
-                  lineHeight: 1.3,
+                  marginBottom: 12 * scale,
+                  lineHeight: 1.2,
                 }}>
-                  <RichText text={line.replace(/^#+\s*/, '')} theme={theme} fontSet={fontSet} scale={scale} fontSize={22} />
+                  <RichText text={line.replace(/^#+\s*/, '')} theme={theme} fontSet={fontSet} scale={scale} fontSize={32} />
                 </div>
               );
             }
@@ -356,25 +352,25 @@ function CodeSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: Them
                 <div key={i} style={{
                   display: 'flex',
                   alignItems: 'flex-start',
-                  gap: 10 * scale,
-                  marginBottom: 6 * scale,
+                  gap: 12 * scale,
+                  marginBottom: 8 * scale,
                   paddingLeft: 4 * scale,
                 }}>
                   <span style={{
                     color: theme.accent,
                     fontWeight: 700,
                     flexShrink: 0,
-                    fontSize: 18 * scale,
-                    lineHeight: '1.5',
+                    fontSize: 26 * scale,
+                    lineHeight: '1.45',
                   }}>▸</span>
-                  <RichText text={bulletText} theme={theme} fontSet={fontSet} scale={scale} fontSize={20} />
+                  <RichText text={bulletText} theme={theme} fontSet={fontSet} scale={scale} fontSize={28} />
                 </div>
               );
             }
-            if (!line.trim()) return <div key={i} style={{ height: 6 * scale }} />;
+            if (!line.trim()) return <div key={i} style={{ height: 8 * scale }} />;
             return (
               <div key={i} style={{ marginBottom: 6 * scale }}>
-                <RichText text={line} theme={theme} fontSet={fontSet} scale={scale} fontSize={20} />
+                <RichText text={line} theme={theme} fontSet={fontSet} scale={scale} fontSize={28} />
               </div>
             );
           })}
@@ -392,12 +388,12 @@ function CodeSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: Them
       {slide.codeTextBelow && (
         <div style={{
           fontFamily: `'${fontSet.body}', sans-serif`,
-          fontSize: 18 * scale,
-          lineHeight: 1.5,
+          fontSize: 24 * scale,
+          lineHeight: 1.45,
           color: theme.muted,
-          marginTop: 14 * scale,
+          marginTop: 16 * scale,
           overflow: 'hidden',
-          maxHeight: 100 * scale,
+          maxHeight: 120 * scale,
           wordBreak: 'break-word' as const,
           overflowWrap: 'anywhere' as const,
           flexShrink: 1,
@@ -409,13 +405,13 @@ function CodeSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: Them
               return (
                 <div key={i} style={{
                   fontFamily: `'${fontSet.heading}', sans-serif`,
-                  fontSize: 20 * scale,
+                  fontSize: 26 * scale,
                   fontWeight: 700,
                   color: theme.fg,
                   marginBottom: 8 * scale,
                   lineHeight: 1.3,
                 }}>
-                  <RichText text={line.replace(/^#+\s*/, '')} theme={theme} fontSet={fontSet} scale={scale} fontSize={20} />
+                  <RichText text={line.replace(/^#+\s*/, '')} theme={theme} fontSet={fontSet} scale={scale} fontSize={26} />
                 </div>
               );
             }
@@ -433,17 +429,17 @@ function CodeSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: Them
                     color: theme.accent,
                     fontWeight: 700,
                     flexShrink: 0,
-                    fontSize: 18 * scale,
-                    lineHeight: '1.5',
+                    fontSize: 22 * scale,
+                    lineHeight: '1.45',
                   }}>▸</span>
-                  <RichText text={bulletText} theme={theme} fontSet={fontSet} scale={scale} fontSize={18} />
+                  <RichText text={bulletText} theme={theme} fontSet={fontSet} scale={scale} fontSize={24} />
                 </div>
               );
             }
-            if (!line.trim()) return <div key={i} style={{ height: 4 * scale }} />;
+            if (!line.trim()) return <div key={i} style={{ height: 6 * scale }} />;
             return (
               <div key={i} style={{ marginBottom: 4 * scale }}>
-                <RichText text={line} theme={theme} fontSet={fontSet} scale={scale} fontSize={18} />
+                <RichText text={line} theme={theme} fontSet={fontSet} scale={scale} fontSize={24} />
               </div>
             );
           })}
@@ -459,11 +455,11 @@ function CtaSlide({ slide, theme, fontSet, scale, config }: { slide: Slide; them
     <div style={{ textAlign: 'center', maxWidth: '85%' }}>
       <h2 style={{
         fontFamily: `'${fontSet.heading}', sans-serif`,
-        fontSize: 44 * scale,
+        fontSize: 64 * scale,
         fontWeight: 800,
-        color: theme.fg,
+        color: brightenColor(theme.fg, 1.2),
         margin: 0,
-        lineHeight: 1.2,
+        lineHeight: 1.12,
         whiteSpace: 'pre-line',
       }}>
         {slide.title}
@@ -471,10 +467,11 @@ function CtaSlide({ slide, theme, fontSet, scale, config }: { slide: Slide; them
       {slide.body && (
         <p style={{
           fontFamily: `'${fontSet.body}', sans-serif`,
-          fontSize: 20 * scale,
+          fontSize: 28 * scale,
           color: theme.muted,
-          marginTop: 20 * scale,
-          lineHeight: 1.5,
+          marginTop: 24 * scale,
+          lineHeight: 1.4,
+          fontWeight: 500,
         }}>
           {slide.body}
         </p>
@@ -482,11 +479,11 @@ function CtaSlide({ slide, theme, fontSet, scale, config }: { slide: Slide; them
       {/* Social references */}
       {(socials.linkedin || socials.twitter || socials.github || socials.website) && (
         <div style={{
-          marginTop: 32 * scale,
+          marginTop: 36 * scale,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 10 * scale,
+          gap: 14 * scale,
         }}>
           {[
             socials.linkedin && `🔗 ${socials.linkedin}`,
@@ -495,7 +492,7 @@ function CtaSlide({ slide, theme, fontSet, scale, config }: { slide: Slide; them
             socials.website && `🌐 ${socials.website}`,
           ].filter(Boolean).map((s, i) => (
             <div key={i} style={{
-              fontSize: 16 * scale,
+              fontSize: 24 * scale,
               color: theme.accent,
               fontFamily: `'${fontSet.body}', sans-serif`,
               fontWeight: 500,
@@ -507,11 +504,11 @@ function CtaSlide({ slide, theme, fontSet, scale, config }: { slide: Slide; them
       )}
       {/* Decorative accent line */}
       <div style={{
-        width: 60 * scale,
-        height: 4 * scale,
-        borderRadius: 2 * scale,
+        width: 180 * scale,
+        height: 6 * scale,
+        borderRadius: 3 * scale,
         background: theme.accent,
-        margin: `${28 * scale}px auto 0`,
+        margin: `${32 * scale}px auto 0`,
       }} />
     </div>
   );
@@ -571,8 +568,68 @@ function RichText({ text, theme, fontSet, scale, fontSize }: { text: string; the
 function isLight(hex: string): boolean {
   if (hex.startsWith('linear') || hex.startsWith('rgba')) return false;
   const c = hex.replace('#', '');
-  const r = parseInt(c.substring(0, 2), 16);
-  const g = parseInt(c.substring(2, 4), 16);
-  const b = parseInt(c.substring(4, 6), 16);
+  const r = Number.parseInt(c.substring(0, 2), 16);
+  const g = Number.parseInt(c.substring(2, 4), 16);
+  const b = Number.parseInt(c.substring(4, 6), 16);
   return (r * 299 + g * 587 + b * 114) / 1000 > 140;
+}
+
+/** Brighten a hex colour by a factor (1.0 = no change, 1.25 = 25% brighter). Clamps at #ffffff. */
+function brightenColor(hex: string, factor: number): string {
+  if (!hex.startsWith('#') || hex.length < 7) return hex;
+  const c = hex.replace('#', '');
+  const r = Math.min(255, Math.round(Number.parseInt(c.substring(0, 2), 16) * factor));
+  const g = Math.min(255, Math.round(Number.parseInt(c.substring(2, 4), 16) * factor));
+  const b = Math.min(255, Math.round(Number.parseInt(c.substring(4, 6), 16) * factor));
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+/** Compute relative luminance of a hex colour (0–1 scale). */
+function luminance(hex: string): number {
+  if (!hex.startsWith('#') || hex.length < 7) return 0;
+  const c = hex.replace('#', '');
+  const srgb = [
+    Number.parseInt(c.substring(0, 2), 16) / 255,
+    Number.parseInt(c.substring(2, 4), 16) / 255,
+    Number.parseInt(c.substring(4, 6), 16) / 255,
+  ].map(v => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
+}
+
+/** WCAG contrast ratio between two hex colours. */
+function contrastRatio(fg: string, bg: string): number {
+  const l1 = luminance(fg);
+  const l2 = luminance(bg);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/**
+ * Ensure muted text meets a minimum contrast ratio against the background.
+ * If contrast is too low, progressively brighten (on dark bg) or darken (on light bg) until it meets the target.
+ */
+function ensureContrast(fgHex: string, bgHex: string, minRatio = 4): string {
+  if (!fgHex.startsWith('#') || !bgHex.startsWith('#')) return fgHex;
+  const ratio = contrastRatio(fgHex, bgHex);
+  if (ratio >= minRatio) return fgHex;
+
+  const bgIsLight = luminance(bgHex) > 0.5;
+  let boosted = fgHex;
+  for (let step = 0; step < 20; step++) {
+    const factor = bgIsLight ? 1 - (step + 1) * 0.05 : 1 + (step + 1) * 0.08;
+    boosted = bgIsLight ? darkenColor(fgHex, factor) : brightenColor(fgHex, factor);
+    if (contrastRatio(boosted, bgHex) >= minRatio) break;
+  }
+  return boosted;
+}
+
+/** Darken a hex colour by a factor (0.9 = 10% darker). */
+function darkenColor(hex: string, factor: number): string {
+  if (!hex.startsWith('#') || hex.length < 7) return hex;
+  const c = hex.replace('#', '');
+  const r = Math.max(0, Math.round(Number.parseInt(c.substring(0, 2), 16) * factor));
+  const g = Math.max(0, Math.round(Number.parseInt(c.substring(2, 4), 16) * factor));
+  const b = Math.max(0, Math.round(Number.parseInt(c.substring(4, 6), 16) * factor));
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }

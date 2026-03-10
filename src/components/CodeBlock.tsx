@@ -1,21 +1,21 @@
-import { useEffect, useRef } from 'react';
 import Prism from 'prismjs';
-import 'prismjs/components/prism-javascript';
-import 'prismjs/components/prism-typescript';
-import 'prismjs/components/prism-jsx';
-import 'prismjs/components/prism-tsx';
-import 'prismjs/components/prism-csharp';
-import 'prismjs/components/prism-python';
-import 'prismjs/components/prism-java';
-import 'prismjs/components/prism-go';
-import 'prismjs/components/prism-rust';
 import 'prismjs/components/prism-bash';
-import 'prismjs/components/prism-json';
-import 'prismjs/components/prism-yaml';
+import 'prismjs/components/prism-csharp';
 import 'prismjs/components/prism-css';
-import 'prismjs/components/prism-sql';
+import 'prismjs/components/prism-go';
+import 'prismjs/components/prism-java';
+import 'prismjs/components/prism-javascript';
+import 'prismjs/components/prism-json';
+import 'prismjs/components/prism-jsx';
 import 'prismjs/components/prism-markup';
-import type { Theme, FontSet } from '../types';
+import 'prismjs/components/prism-python';
+import 'prismjs/components/prism-rust';
+import 'prismjs/components/prism-sql';
+import 'prismjs/components/prism-tsx';
+import 'prismjs/components/prism-typescript';
+import 'prismjs/components/prism-yaml';
+import { useEffect, useRef } from 'react';
+import type { FontSet, Theme } from '../types';
 
 interface CodeBlockProps {
   code: string;
@@ -43,9 +43,36 @@ function highlightCode(code: string, lang: string, syntax: Theme['syntax']): str
   const grammar = Prism.languages[prismLang];
   if (!grammar) return escapeHtml(code);
 
-  let html = Prism.highlight(code, grammar, prismLang);
+  // Pre-process: protect C# 11 raw string literals (""" ... """) from being mis-tokenized
+  const rawStringPlaceholders: string[] = [];
+  let processedCode = code;
+  if (prismLang === 'csharp') {
+    processedCode = processedCode.replace(/"""[\s\S]*?"""/g, (match) => {
+      const idx = rawStringPlaceholders.length;
+      rawStringPlaceholders.push(match);
+      return `"__RAW_STRING_${idx}__"`;
+    });
+  }
+
+  let html = Prism.highlight(processedCode, grammar, prismLang);
+
+  // Restore raw string literals with proper string colouring
+  for (let i = 0; i < rawStringPlaceholders.length; i++) {
+    const placeholder = `__RAW_STRING_${i}__`;
+    const rawContent = escapeHtml(rawStringPlaceholders[i]);
+    html = html.replace(
+      new RegExp(`<span class="token string">"${placeholder}"</span>`, 'g'),
+      `<span class="token string" style="color:${syntax.string}">${rawContent}</span>`,
+    );
+    // Fallback: if Prism didn't wrap it in a string token
+    html = html.replace(
+      new RegExp(`"${placeholder}"`, 'g'),
+      `<span class="token string" style="color:${syntax.string}">${rawContent}</span>`,
+    );
+  }
 
   // Map Prism token classes to our theme colours
+  // Use a regex that handles compound classes like "generic class-name", "constructor-invocation class-name"
   const tokenMap: Record<string, string> = {
     keyword: syntax.keyword,
     string: syntax.string,
@@ -76,9 +103,20 @@ function highlightCode(code: string, lang: string, syntax: Theme['syntax']): str
     'decorator': syntax.attribute,
   };
 
+  // Apply colours – match compound classes (e.g. "token generic class-name")
   for (const [cls, color] of Object.entries(tokenMap)) {
-    const regex = new RegExp(`<span class="token ${cls}"`, 'g');
-    html = html.replace(regex, `<span class="token ${cls}" style="color:${color}"`);
+    // Match spans where cls appears anywhere in the class list after "token"
+    const regex = new RegExp(`<span class="token(?:[^"]*\\s)${cls.replace(/-/g, '\\-')}"`, 'g');
+    html = html.replace(regex, (match) => {
+      if (match.includes('style=')) return match;
+      return match + ` style="color:${color}"`;
+    });
+    // Also match exact "token cls" (original pattern)
+    const exactRegex = new RegExp(`<span class="token ${cls.replace(/-/g, '\\-')}"`, 'g');
+    html = html.replace(exactRegex, (match) => {
+      if (match.includes('style=')) return match;
+      return match + ` style="color:${color}"`;
+    });
   }
 
   return html;
@@ -104,10 +142,10 @@ export default function CodeBlock({ code, language, theme, fontSet, caption, sca
   const headerPX = 16 * s;
   const codePadX = 26 * s;
   const codePadY = 28 * s;
-  const fontSize = 18 * s;
-  const lineHeight = 1.6;
+  const fontSize = 24 * s;
+  const lineHeight = 1.55;
   const borderRadius = 12 * s;
-  const captionSize = 13 * s;
+  const captionSize = 22 * s;
 
   return (
     <div style={{ width: '100%' }}>
@@ -116,9 +154,9 @@ export default function CodeBlock({ code, language, theme, fontSet, caption, sca
         style={{
           background: theme.editorBg,
           borderRadius: `${borderRadius}px`,
-          border: `1px solid ${theme.editorBorder}`,
+          border: `1.5px solid ${theme.editorBorder}`,
           overflow: 'hidden',
-          boxShadow: `0 ${25 * s}px ${50 * s}px rgba(0,0,0,0.35), 0 ${10 * s}px ${20 * s}px rgba(0,0,0,0.2)`,
+          boxShadow: `0 ${12 * s}px ${32 * s}px rgba(0,0,0,0.35), 0 ${4 * s}px ${12 * s}px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04)`,
         }}
       >
         {/* Header bar */}
@@ -143,7 +181,7 @@ export default function CodeBlock({ code, language, theme, fontSet, caption, sca
             textAlign: 'center',
             color: theme.editorHeaderFg,
             fontFamily: `'${fontSet.code}', monospace`,
-            fontSize: `${12 * s}px`,
+            fontSize: `${16 * s}px`,
             letterSpacing: '0.03em',
           }}>
             {language ? `main.${langExt(language)}` : 'untitled'}
