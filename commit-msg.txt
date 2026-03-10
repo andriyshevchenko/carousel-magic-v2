@@ -1,0 +1,1 @@
+refactor: replace html2canvas with html-to-image for perfect CSS fidelity

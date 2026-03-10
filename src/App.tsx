@@ -40,54 +40,8 @@ export default function App() {
   const handleExportPdf = useCallback(async () => {
     setExporting(true);
     try {
-      // We need to render all slides at full 1080 size for export
       const container = document.createElement('div');
-      container.style.position = 'fixed';
-      container.style.left = '-9999px';
-      container.style.top = '0';
-      document.body.appendChild(container);
-
-      const { createRoot } = await import('react-dom/client');
-
-      const elements: HTMLElement[] = [];
-
-      for (let i = 0; i < slides.length; i++) {
-        const wrapper = document.createElement('div');
-        container.appendChild(wrapper);
-
-        const root = createRoot(wrapper);
-        root.render(
-          <SlideCanvas
-            slide={slides[i]}
-            config={config}
-            slideIndex={i}
-            totalSlides={slides.length}
-            renderWidth={config.format === '1080x1350' ? 1080 : 1080}
-            fullSize
-          />
-        );
-
-        // Wait for render
-        await new Promise(r => setTimeout(r, 300));
-        const el = wrapper.firstElementChild as HTMLElement;
-        if (el) elements.push(el);
-      }
-
-      await exportToPdf(elements, config.format);
-      document.body.removeChild(container);
-    } catch (err) {
-      console.error('Export failed:', err);
-    }
-    setExporting(false);
-  }, [slides, config]);
-
-  const handleExportPngs = useCallback(async () => {
-    setExporting(true);
-    try {
-      const container = document.createElement('div');
-      container.style.position = 'fixed';
-      container.style.left = '-9999px';
-      container.style.top = '0';
+      container.style.cssText = 'position:fixed;left:0;top:0;z-index:-1;opacity:0;pointer-events:none;';
       document.body.appendChild(container);
 
       const { createRoot } = await import('react-dom/client');
@@ -108,13 +62,52 @@ export default function App() {
             fullSize
           />
         );
-        await new Promise(r => setTimeout(r, 300));
+
+        await new Promise(r => setTimeout(r, 500));
+        const el = wrapper.firstElementChild as HTMLElement;
+        if (el) elements.push(el);
+      }
+
+      await exportToPdf(elements, config.format);
+      container.remove();
+    } catch (err) {
+      console.error('Export failed:', err);
+    }
+    setExporting(false);
+  }, [slides, config]);
+
+  const handleExportPngs = useCallback(async () => {
+    setExporting(true);
+    try {
+      const container = document.createElement('div');
+      container.style.cssText = 'position:fixed;left:0;top:0;z-index:-1;opacity:0;pointer-events:none;';
+      document.body.appendChild(container);
+
+      const { createRoot } = await import('react-dom/client');
+      const elements: HTMLElement[] = [];
+
+      for (let i = 0; i < slides.length; i++) {
+        const wrapper = document.createElement('div');
+        container.appendChild(wrapper);
+
+        const root = createRoot(wrapper);
+        root.render(
+          <SlideCanvas
+            slide={slides[i]}
+            config={config}
+            slideIndex={i}
+            totalSlides={slides.length}
+            renderWidth={1080}
+            fullSize
+          />
+        );
+        await new Promise(r => setTimeout(r, 500));
         const el = wrapper.firstElementChild as HTMLElement;
         if (el) elements.push(el);
       }
 
       await exportToPngs(elements, config.format);
-      document.body.removeChild(container);
+      container.remove();
     } catch (err) {
       console.error('Export failed:', err);
     }
