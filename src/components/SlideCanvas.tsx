@@ -1,7 +1,8 @@
 import { FONT_SETS } from '../data/fonts';
 import { getTheme } from '../data/themes';
 import type { CarouselConfig, FontSet, Slide, Theme } from '../types';
-import { brightenColor, ensureContrast, isLight } from '../utils/colors';
+import { brightenColor, isLight } from '../utils/colors';
+import { getCanvasDimensions, isGradient, resolveTheme } from '../utils/slideLayout';
 import CodeBlock from './CodeBlock';
 import RichText from './RichText';
 import TextBlock from './TextBlock';
@@ -21,20 +22,14 @@ interface SlideCanvasProps {
 export default function SlideCanvas({ slide, config, slideIndex, totalSlides, renderWidth, fullSize }: SlideCanvasProps) {
   const rawTheme = getTheme(config.themeId);
   const fontSet = FONT_SETS.find(f => f.id === config.fontSetId) ?? FONT_SETS[0];
-  const [canvasW, canvasH] = config.format === '1080x1350' ? [1080, 1350] : [1080, 1080];
+  const [canvasW, canvasH] = getCanvasDimensions(config.format);
   const scale = fullSize ? 1 : renderWidth / canvasW;
 
   const w = fullSize ? canvasW : renderWidth;
   const h = fullSize ? canvasH : canvasH * scale;
 
-  const isGradient = rawTheme.bg.startsWith('linear-gradient');
-
-  // Derive a contrast-safe theme: ensure muted text is readable against the background
-  const bgForContrast = isGradient ? '#1a1a2e' : rawTheme.bg; // approximate gradient bg for contrast calc
-  const theme: typeof rawTheme = {
-    ...rawTheme,
-    muted: ensureContrast(rawTheme.muted, bgForContrast, 4),
-  };
+  const gradientBg = isGradient(rawTheme.bg);
+  const theme = resolveTheme(rawTheme);
 
   return (
     <div
@@ -44,7 +39,7 @@ export default function SlideCanvas({ slide, config, slideIndex, totalSlides, re
         height: h,
         position: 'relative',
         overflow: 'hidden',
-        ...(isGradient
+        ...(gradientBg
           ? { backgroundImage: theme.bg }
           : { backgroundColor: theme.bg }),
         fontFamily: `'${fontSet.body}', sans-serif`,

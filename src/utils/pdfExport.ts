@@ -1,10 +1,7 @@
 import { toJpeg, toPng, getFontEmbedCSS } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import type { SlideFormat } from '../types';
-
-function getDimensions(format: SlideFormat): [number, number] {
-  return format === '1080x1350' ? [1080, 1350] : [1080, 1080];
-}
+import { getCanvasDimensions } from './slideLayout';
 
 /**
  * Pre-fetch and embed all Google Fonts as base64 data URIs.
@@ -35,7 +32,7 @@ export async function exportToPdf(
   format: SlideFormat,
   filename = 'carousel.pdf',
 ): Promise<void> {
-  const [w, h] = getDimensions(format);
+  const [w, h] = getCanvasDimensions(format);
 
   // Pre-fetch fonts once for all slides
   const fontEmbedCSS = slideElements[0]

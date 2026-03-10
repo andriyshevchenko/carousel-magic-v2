@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { CarouselConfig, Slide, SlideType } from '../types';
+import { slideLabel } from '../utils/slideHelpers';
 import FontPicker from './FontPicker';
 import SlideEditor from './SlideEditor';
 import TemplateManager from './TemplateManager';
@@ -307,10 +308,4 @@ export default function Sidebar(props: SidebarProps) {
       </div>
     </aside>
   );
-}
-
-function slideLabel(s: Slide): string {
-  const typeEmoji = { hook: '🎯', content: '📝', code: '💻', cta: '📢' };
-  const title = s.title ? s.title.split('\n')[0].slice(0, 30) : s.code ? s.code.split('\n')[0].slice(0, 30) : 'Untitled';
-  return `${typeEmoji[s.type]} ${title}`;
 }
