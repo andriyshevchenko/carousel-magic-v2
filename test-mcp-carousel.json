@@ -1,0 +1,49 @@
+{
+  "$schema": "carousel-magic-v2",
+  "config": {
+    "format": "1080x1080",
+    "themeId": "github-dark",
+    "fontSetId": "geist",
+    "authorName": "Andrii Shevchenko",
+    "authorHandle": "@andriy-shevchenko-dev",
+    "authorInitials": "AS",
+    "showNavDots": true,
+    "showSlideNumbers": true,
+    "showAuthorBadge": true,
+    "showSwipeHint": true
+  },
+  "slides": [
+    {
+      "type": "hook",
+      "title": "Build Your Own MCP Server\nin TypeScript from Scratch",
+      "subtitle": "Ship AI-ready tool servers in under 100 lines"
+    },
+    {
+      "type": "code",
+      "code": "import { McpServer } from \"@modelcontextprotocol/sdk/server/mcp.js\";\nimport { StdioServerTransport } from \"@modelcontextprotocol/sdk/server/stdio.js\";\n\nconst server = new McpServer({\n  name: \"my-mcp-server\",\n  version: \"1.0.0\",\n});\n\nconst transport = new StdioServerTransport();\nawait server.connect(transport);\nconsole.error(\"MCP server running\");",
+      "codeLang": "typescript",
+      "codeTextAbove": "# 1. Bootstrap the Server\n• Import **McpServer** and a transport\n• Create an instance with `name` and `version`\n• Connect via **stdio** transport"
+    },
+    {
+      "type": "content",
+      "title": "How MCP Works",
+      "body": "• Client sends **JSON-RPC** requests\n• Server exposes **tools** and **resources**\n• Transport handles the I/O layer\n• Schema validates every call"
+    },
+    {
+      "type": "code",
+      "code": "import { z } from \"zod\";\n\nserver.tool(\n  \"get-weather\",\n  \"Fetch current weather for a city\",\n  { city: z.string() },\n  async ({ city }) => {\n    const data = await fetchWeather(city);\n    return {\n      content: [{ type: \"text\", text: data }],\n    };\n  }\n);",
+      "codeLang": "typescript",
+      "codeTextAbove": "# 2. Register a Tool\n• Define a tool with `server.tool()`\n• Use **Zod** schemas for input validation\n• Return structured `content` arrays"
+    },
+    {
+      "type": "content",
+      "title": "Best Practices",
+      "body": "• Validate inputs with **Zod** schemas\n• Return clear `error` messages\n• Keep tools **small** and focused\n• Add descriptions for discoverability"
+    },
+    {
+      "type": "cta",
+      "title": "Found this useful?\nFollow for more!",
+      "body": "♻️ Repost to help others\n💾 Save for your next project"
+    }
+  ]
+}
