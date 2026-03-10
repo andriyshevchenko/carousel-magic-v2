@@ -1,9 +1,9 @@
+import { useState } from 'react';
 import type { CarouselConfig, Slide, SlideType } from '../types';
-import ThemePicker from './ThemePicker';
 import FontPicker from './FontPicker';
 import SlideEditor from './SlideEditor';
 import TemplateManager from './TemplateManager';
-import { useState } from 'react';
+import ThemePicker from './ThemePicker';
 
 interface SidebarProps {
   config: CarouselConfig;

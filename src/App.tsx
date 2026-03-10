@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Sidebar from './components/Sidebar';
 import SlideCanvas from './components/SlideCanvas';
 import { useCarousel } from './hooks/useCarousel';

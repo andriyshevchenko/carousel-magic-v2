@@ -191,7 +191,7 @@ export default function CodeBlock({ code, language, theme, fontSet, caption, sca
         </div>
 
         {/* Code area */}
-        <div style={{ padding: `${codePadY}px ${codePadX}px`, overflowX: 'auto' }}>
+        <div style={{ padding: `${codePadY}px ${codePadX}px` }}>
           <pre
             ref={codeRef}
             style={{
@@ -201,7 +201,8 @@ export default function CodeBlock({ code, language, theme, fontSet, caption, sca
               fontSize: `${fontSize}px`,
               lineHeight,
               color: theme.syntax.plain,
-              whiteSpace: 'pre',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-all',
               background: 'transparent',
               tabSize: 4,
             }}
