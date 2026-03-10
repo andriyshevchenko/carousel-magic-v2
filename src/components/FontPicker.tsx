@@ -1,5 +1,4 @@
-import { FONT_SETS, CODE_FONTS, HEADING_FONTS, BODY_FONTS } from '../data/fonts';
-import type { FontSet } from '../types';
+import { FONT_SETS } from '../data/fonts';
 
 interface FontPickerProps {
   currentId: string;

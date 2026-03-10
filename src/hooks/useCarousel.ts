@@ -230,7 +230,7 @@ export function useCarousel() {
                 });
 
                 if (warnings.length > 0) {
-                    console.log('[Carousel Import] Auto-fixes applied:', warnings);
+                    console.debug('[Carousel Import] Auto-fixes applied:', warnings);
                 }
             } catch (e) {
                 alert(`Failed to parse JSON: ${e instanceof Error ? e.message : 'Unknown error'}`);
