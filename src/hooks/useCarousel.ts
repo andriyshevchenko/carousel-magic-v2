@@ -122,6 +122,45 @@ export function useCarousel() {
         setState({ config, slides, activeSlideIndex: 0 });
     }, []);
 
+    /* ── JSON import / export ── */
+    const exportJson = useCallback(() => {
+        const payload = {
+            $schema: 'carousel-magic-v2',
+            config: state.config,
+            slides: state.slides.map(({ id: _id, ...rest }: Slide) => rest),
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'carousel.json';
+        a.click();
+        URL.revokeObjectURL(url);
+    }, [state.config, state.slides]);
+
+    const importJson = useCallback((file: File) => {
+        file.text().then((text) => {
+            try {
+                const data = JSON.parse(text);
+                if (!data.config || !Array.isArray(data.slides)) {
+                    alert('Invalid carousel JSON: missing config or slides');
+                    return;
+                }
+                const slides: Slide[] = data.slides.map((s: Omit<Slide, 'id'>) => ({
+                    id: uid(),
+                    ...s,
+                }));
+                setState({
+                    config: { ...DEFAULT_CONFIG, ...data.config },
+                    slides,
+                    activeSlideIndex: 0,
+                });
+            } catch {
+                alert('Failed to parse JSON file');
+            }
+        });
+    }, []);
+
     const currentFont = FONT_SETS.find(f => f.id === state.config.fontSetId) ?? FONT_SETS[0];
 
     return {
@@ -138,5 +177,7 @@ export function useCarousel() {
         removeSlide,
         moveSlide,
         loadFromTemplate,
+        exportJson,
+        importJson,
     };
 }

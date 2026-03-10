@@ -19,6 +19,8 @@ interface SidebarProps {
   onLoadTemplate: (config: CarouselConfig, slides: Slide[]) => void;
   onExportPdf: () => void;
   onExportPngs: () => void;
+  onExportJson: () => void;
+  onImportJson: (file: File) => void;
 }
 
 type Tab = 'slides' | 'design' | 'settings' | 'templates';
@@ -28,7 +30,7 @@ export default function Sidebar(props: SidebarProps) {
   const {
     config, slides, activeSlide, activeSlideIndex,
     onConfigChange, onSlideUpdate, onAddSlide, onRemoveSlide, onMoveSlide, onSelectSlide,
-    onLoadTemplate, onExportPdf, onExportPngs,
+    onLoadTemplate, onExportPdf, onExportPngs, onExportJson, onImportJson,
   } = props;
 
   const tabs: { id: Tab; label: string; icon: string }[] = [
@@ -281,6 +283,27 @@ export default function Sidebar(props: SidebarProps) {
         >
           🖼 Export PNGs
         </button>
+        <div className="flex gap-2">
+          <button
+            onClick={onExportJson}
+            className="flex-1 bg-zinc-800/60 hover:bg-zinc-700 text-zinc-300 text-xs font-medium rounded-lg py-1.5 transition-colors cursor-pointer"
+          >
+            📋 Export JSON
+          </button>
+          <label className="flex-1 bg-zinc-800/60 hover:bg-zinc-700 text-zinc-300 text-xs font-medium rounded-lg py-1.5 transition-colors cursor-pointer text-center">
+            📥 Import JSON
+            <input
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={e => {
+                const f = e.target.files?.[0];
+                if (f) { onImportJson(f); }
+                e.target.value = '';
+              }}
+            />
+          </label>
+        </div>
       </div>
     </aside>
   );

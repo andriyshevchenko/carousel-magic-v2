@@ -8,6 +8,7 @@ export default function App() {
   const {
     config, slides, activeSlide, activeSlideIndex, currentFont,
     setConfig, setActiveSlide, updateSlide, addSlide, removeSlide, moveSlide, loadFromTemplate,
+    exportJson, importJson,
   } = useCarousel();
 
   const previewRef = useRef<HTMLDivElement>(null);
@@ -147,6 +148,8 @@ export default function App() {
         onLoadTemplate={loadFromTemplate}
         onExportPdf={handleExportPdf}
         onExportPngs={handleExportPngs}
+        onExportJson={exportJson}
+        onImportJson={importJson}
       />
 
       {/* ── Main preview area ── */}

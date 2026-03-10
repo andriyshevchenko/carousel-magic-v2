@@ -1,0 +1,132 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Carousel Magic V2 - Carousel JSON Schema",
+  "description": "Schema for importing carousels into Carousel Magic V2. AI agents can generate this JSON to create carousels automatically.",
+  "type": "object",
+  "required": ["config", "slides"],
+  "properties": {
+    "$schema": {
+      "const": "carousel-magic-v2"
+    },
+    "config": {
+      "type": "object",
+      "required": ["format", "themeId", "fontSetId", "authorName", "authorHandle", "authorInitials"],
+      "properties": {
+        "format": {
+          "enum": ["1080x1080", "1080x1350"],
+          "description": "Slide dimensions. 1080x1080 = square (LinkedIn), 1080x1350 = portrait (Instagram)"
+        },
+        "themeId": {
+          "type": "string",
+          "description": "Theme ID. Popular options: one-dark-pro, github-dark, dracula, monokai, nord, solarized-dark, tokyo-night, catppuccin-mocha, gruvbox-dark, rose-pine. See themes.ts for full list (56 themes)."
+        },
+        "fontSetId": {
+          "type": "string",
+          "description": "Font set ID. Options: inter-jetbrains (default), poppins-fira, space-source, roboto-cascadia, dm-mono, geist, ibm-plex, outfit-commit, nunito-hack, plus-meslo"
+        },
+        "authorName": { "type": "string" },
+        "authorHandle": { "type": "string", "description": "e.g. @username" },
+        "authorInitials": { "type": "string", "maxLength": 3 },
+        "showNavDots": { "type": "boolean", "default": true },
+        "showSlideNumbers": { "type": "boolean", "default": true },
+        "showAuthorBadge": { "type": "boolean", "default": true },
+        "showSwipeHint": { "type": "boolean", "default": true },
+        "ctaSocials": {
+          "type": "object",
+          "properties": {
+            "linkedin": { "type": "string" },
+            "twitter": { "type": "string" },
+            "github": { "type": "string" },
+            "website": { "type": "string" }
+          }
+        }
+      }
+    },
+    "slides": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "enum": ["hook", "content", "code", "cta"],
+            "description": "hook = title/intro slide, content = bullet points, code = code block with optional text, cta = call to action"
+          },
+          "title": {
+            "type": "string",
+            "description": "Slide title. Use \\n for line breaks. Used by hook, content, cta types."
+          },
+          "subtitle": {
+            "type": "string",
+            "description": "Short subtitle (hook slides only)"
+          },
+          "body": {
+            "type": "string",
+            "description": "Body text. Use \\n for line breaks. Bullets: start lines with • or -. Rich text: **bold**, `code`. Used by content and cta types."
+          },
+          "code": {
+            "type": "string",
+            "description": "Code content (code slides only). Use \\n for line breaks."
+          },
+          "codeLang": {
+            "type": "string",
+            "description": "Language for syntax highlighting. Options: javascript, typescript, python, csharp, java, go, rust, html, css, json, yaml, bash, sql, etc."
+          },
+          "codeTextAbove": {
+            "type": "string",
+            "description": "Text shown above the code block. Supports: # Heading, - bullet points, **bold**, `inline code`. Use \\n for line breaks."
+          },
+          "codeTextBelow": {
+            "type": "string",
+            "description": "Text shown below the code block. Same formatting as codeTextAbove."
+          },
+          "codeCaption": {
+            "type": "string",
+            "description": "Small caption text below the code block filename"
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "$schema": "carousel-magic-v2",
+      "config": {
+        "format": "1080x1080",
+        "themeId": "one-dark-pro",
+        "fontSetId": "inter-jetbrains",
+        "authorName": "Your Name",
+        "authorHandle": "@yourhandle",
+        "authorInitials": "YN",
+        "showNavDots": true,
+        "showSlideNumbers": true,
+        "showAuthorBadge": true,
+        "showSwipeHint": true
+      },
+      "slides": [
+        {
+          "type": "hook",
+          "title": "5 TypeScript Tips\nYou Need to Know",
+          "subtitle": "Level up your TS game"
+        },
+        {
+          "type": "code",
+          "code": "type IsString<T> = T extends string ? true : false;\ntype Result = IsString<'hello'>; // true",
+          "codeLang": "typescript",
+          "codeTextAbove": "# 1. Conditional Types\n- Check types at **compile time**\n- Use `extends` keyword for type guards"
+        },
+        {
+          "type": "content",
+          "title": "Why TypeScript?",
+          "body": "• Catch bugs **before runtime**\n• Better `IDE` support and autocomplete\n• Self-documenting code\n• Scales with your team"
+        },
+        {
+          "type": "cta",
+          "title": "Follow for more\nTypeScript content",
+          "body": "Save this for later ↗"
+        }
+      ]
+    }
+  ]
+}
