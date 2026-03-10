@@ -1,0 +1,9 @@
+refactor: separate UI from business logic and enforce DRY
+
+- Extract utils/colors.ts: isLight, brightenColor, darkenColor, luminance, contrastRatio, ensureContrast
+- Extract components/RichText.tsx: inline markdown renderer (bold, code)
+- Extract components/TextBlock.tsx: shared bullet/heading/plain text line renderer
+- Extract hooks/useExport.tsx: offscreen render + PDF/PNG export logic
+- Remove 90% duplicate export code from App.tsx (was two copy-pasted handlers)
+- Remove 3x duplicated bullet/heading rendering from SlideCanvas CodeSlide
+- SlideCanvas.tsx reduced from 650 to 445 lines

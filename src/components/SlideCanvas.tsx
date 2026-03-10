@@ -1,7 +1,11 @@
 import { FONT_SETS } from '../data/fonts';
 import { getTheme } from '../data/themes';
 import type { CarouselConfig, FontSet, Slide, Theme } from '../types';
+import { brightenColor, ensureContrast, isLight } from '../utils/colors';
 import CodeBlock from './CodeBlock';
+import RichText from './RichText';
+import TextBlock from './TextBlock';
+import type { TextBlockSizes } from './TextBlock';
 
 interface SlideCanvasProps {
   slide: Slide;
@@ -255,6 +259,16 @@ function HookSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: Them
   );
 }
 
+const CONTENT_TEXT_SIZES: TextBlockSizes = {
+  heading: 52,
+  body: 34,
+  bullet: 34,
+  headingGap: 28,
+  bulletGap: 20,
+  lineGap: 20,
+  emptyLineHeight: 10,
+};
+
 function ContentSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: Theme; fontSet: FontSet; scale: number }) {
   return (
     <div style={{ maxWidth: '88%', width: '100%' }}>
@@ -280,32 +294,13 @@ function ContentSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: T
           color: theme.fg,
           whiteSpace: 'pre-line',
         }}>
-          {slide.body.split('\n').map((line, i) => {
-            const isBullet = line.startsWith('•') || line.startsWith('-') || line.startsWith('*');
-            return (
-              <div key={i} style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 14 * scale,
-                marginBottom: 20 * scale,
-              }}>
-                {isBullet && (
-                  <span style={{
-                    color: theme.accent,
-                    fontWeight: 700,
-                    flexShrink: 0,
-                    fontSize: 34 * scale,
-                    lineHeight: '1.55',
-                  }}>
-                    ▸
-                  </span>
-                )}
-                <span style={{ color: theme.fg }}>
-                  <RichText text={isBullet ? line.replace(/^[•\-*]\s*/, '') : line} theme={theme} fontSet={fontSet} scale={scale} fontSize={34} />
-                </span>
-              </div>
-            );
-          })}
+          <TextBlock
+            text={slide.body}
+            theme={theme}
+            fontSet={fontSet}
+            scale={scale}
+            sizes={CONTENT_TEXT_SIZES}
+          />
         </div>
       )}
     </div>
@@ -314,22 +309,34 @@ function ContentSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: T
 
 function CodeSlide({ slide, theme, fontSet, scale, isTall }: { slide: Slide; theme: Theme; fontSet: FontSet; scale: number; isTall: boolean }) {
   // Format-adaptive typography: larger on 1080×1350, smaller on 1080×1080
-  const headingSize = isTall ? 52 : 42;
-  const bodySize = isTall ? 34 : 30;
-  const bulletSize = isTall ? 32 : 28;
+  const aboveSizes: TextBlockSizes = {
+    heading: isTall ? 52 : 42,
+    body: isTall ? 34 : 30,
+    bullet: isTall ? 32 : 28,
+    headingGap: isTall ? 28 : 20,
+    bulletGap: isTall ? 16 : 12,
+    lineGap: 6,
+    emptyLineHeight: 8,
+  };
+  const belowSizes: TextBlockSizes = {
+    heading: aboveSizes.body - 2,
+    body: aboveSizes.body - 4,
+    bullet: aboveSizes.bullet - 4,
+    headingGap: 8,
+    bulletGap: 6,
+    lineGap: 4,
+    emptyLineHeight: 6,
+  };
   const maxTextHeight = isTall ? 340 : 240;
-  // Format-adaptive spacing: more breathing room on portrait
-  const headingGap = isTall ? 28 : 20;
-  const bulletGap = isTall ? 16 : 12;
   const textToCodeGap = isTall ? 32 : 24;
 
   return (
     <div style={{ width: '94%', display: 'flex', flexDirection: 'column' as const, overflow: 'hidden' }}>
-      {/* Arbitrary text above the code block */}
+      {/* Text above the code block */}
       {slide.codeTextAbove && (
         <div style={{
           fontFamily: `'${fontSet.body}', sans-serif`,
-          fontSize: bodySize * scale,
+          fontSize: aboveSizes.body * scale,
           lineHeight: 1.45,
           color: theme.fg,
           marginBottom: textToCodeGap * scale,
@@ -339,51 +346,7 @@ function CodeSlide({ slide, theme, fontSet, scale, isTall }: { slide: Slide; the
           overflowWrap: 'anywhere' as const,
           flexShrink: 1,
         }}>
-          {slide.codeTextAbove.split('\n').map((line, i) => {
-            const isBullet = line.startsWith('•') || line.startsWith('-') || line.startsWith('*');
-            const isHeading = line.startsWith('#');
-            if (isHeading) {
-              return (
-                <div key={i} style={{
-                  fontFamily: `'${fontSet.heading}', sans-serif`,
-                  fontSize: headingSize * scale,
-                  fontWeight: 700,
-                  color: theme.fg,
-                  marginBottom: headingGap * scale,
-                  lineHeight: 1.2,
-                }}>
-                  <RichText text={line.replace(/^#+\s*/, '')} theme={theme} fontSet={fontSet} scale={scale} fontSize={headingSize} />
-                </div>
-              );
-            }
-            if (isBullet) {
-              const bulletText = line.replace(/^[•\-*]\s*/, '');
-              return (
-                <div key={i} style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 12 * scale,
-                  marginBottom: bulletGap * scale,
-                  paddingLeft: 4 * scale,
-                }}>
-                  <span style={{
-                    color: theme.accent,
-                    fontWeight: 700,
-                    flexShrink: 0,
-                    fontSize: bulletSize * scale,
-                    lineHeight: '1.45',
-                  }}>▸</span>
-                  <RichText text={bulletText} theme={theme} fontSet={fontSet} scale={scale} fontSize={bodySize} />
-                </div>
-              );
-            }
-            if (!line.trim()) return <div key={i} style={{ height: 8 * scale }} />;
-            return (
-              <div key={i} style={{ marginBottom: 6 * scale }}>
-                <RichText text={line} theme={theme} fontSet={fontSet} scale={scale} fontSize={bodySize} />
-              </div>
-            );
-          })}
+          <TextBlock text={slide.codeTextAbove} theme={theme} fontSet={fontSet} scale={scale} sizes={aboveSizes} />
         </div>
       )}
       <CodeBlock
@@ -394,11 +357,11 @@ function CodeSlide({ slide, theme, fontSet, scale, isTall }: { slide: Slide; the
         caption={slide.codeCaption}
         scale={scale}
       />
-      {/* Arbitrary text below the code block */}
+      {/* Text below the code block */}
       {slide.codeTextBelow && (
         <div style={{
           fontFamily: `'${fontSet.body}', sans-serif`,
-          fontSize: (bodySize - 4) * scale,
+          fontSize: belowSizes.body * scale,
           lineHeight: 1.45,
           color: theme.muted,
           marginTop: 16 * scale,
@@ -408,51 +371,7 @@ function CodeSlide({ slide, theme, fontSet, scale, isTall }: { slide: Slide; the
           overflowWrap: 'anywhere' as const,
           flexShrink: 1,
         }}>
-          {slide.codeTextBelow.split('\n').map((line, i) => {
-            const isBullet = line.startsWith('•') || line.startsWith('-') || line.startsWith('*');
-            const isHeading = line.startsWith('#');
-            if (isHeading) {
-              return (
-                <div key={i} style={{
-                  fontFamily: `'${fontSet.heading}', sans-serif`,
-                  fontSize: (bodySize - 2) * scale,
-                  fontWeight: 700,
-                  color: theme.fg,
-                  marginBottom: 8 * scale,
-                  lineHeight: 1.3,
-                }}>
-                  <RichText text={line.replace(/^#+\s*/, '')} theme={theme} fontSet={fontSet} scale={scale} fontSize={bodySize - 2} />
-                </div>
-              );
-            }
-            if (isBullet) {
-              const bulletText = line.replace(/^[•\-*]\s*/, '');
-              return (
-                <div key={i} style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 10 * scale,
-                  marginBottom: 6 * scale,
-                  paddingLeft: 4 * scale,
-                }}>
-                  <span style={{
-                    color: theme.accent,
-                    fontWeight: 700,
-                    flexShrink: 0,
-                    fontSize: (bulletSize - 4) * scale,
-                    lineHeight: '1.45',
-                  }}>▸</span>
-                  <RichText text={bulletText} theme={theme} fontSet={fontSet} scale={scale} fontSize={bodySize - 4} />
-                </div>
-              );
-            }
-            if (!line.trim()) return <div key={i} style={{ height: 6 * scale }} />;
-            return (
-              <div key={i} style={{ marginBottom: 4 * scale }}>
-                <RichText text={line} theme={theme} fontSet={fontSet} scale={scale} fontSize={bodySize - 4} />
-              </div>
-            );
-          })}
+          <TextBlock text={slide.codeTextBelow} theme={theme} fontSet={fontSet} scale={scale} sizes={belowSizes} color={theme.muted} />
         </div>
       )}
     </div>
@@ -524,122 +443,3 @@ function CtaSlide({ slide, theme, fontSet, scale, config }: { slide: Slide; them
   );
 }
 
-/* ── Rich inline text: **bold** renders in accent, `code` renders in code font ── */
-function RichText({ text, theme, fontSet, scale, fontSize }: { text: string; theme: Theme; fontSet: FontSet; scale: number; fontSize: number }) {
-  // Parse **bold**, `code`, and plain text segments
-  const parts: { type: 'plain' | 'bold' | 'code'; value: string }[] = [];
-  const regex = /(\*\*(.+?)\*\*|`(.+?)`)/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push({ type: 'plain', value: text.slice(lastIndex, match.index) });
-    }
-    if (match[2]) {
-      parts.push({ type: 'bold', value: match[2] });
-    } else if (match[3]) {
-      parts.push({ type: 'code', value: match[3] });
-    }
-    lastIndex = regex.lastIndex;
-  }
-  if (lastIndex < text.length) {
-    parts.push({ type: 'plain', value: text.slice(lastIndex) });
-  }
-  if (parts.length === 0) parts.push({ type: 'plain', value: text });
-
-  return (
-    <span>
-      {parts.map((p, i) => {
-        if (p.type === 'bold') {
-          return (
-            <span key={i} style={{ color: theme.accent, fontWeight: 700 }}>{p.value}</span>
-          );
-        }
-        if (p.type === 'code') {
-          return (
-            <span key={i} style={{
-              fontFamily: `'${fontSet.code}', monospace`,
-              fontSize: (fontSize - 2) * scale,
-              background: `${theme.accent}18`,
-              color: theme.accent,
-              padding: `${1 * scale}px ${6 * scale}px`,
-              borderRadius: 4 * scale,
-              fontWeight: 500,
-            }}>{p.value}</span>
-          );
-        }
-        return <span key={i}>{p.value}</span>;
-      })}
-    </span>
-  );
-}
-
-/* ── Helpers ── */
-function isLight(hex: string): boolean {
-  if (hex.startsWith('linear') || hex.startsWith('rgba')) return false;
-  const c = hex.replace('#', '');
-  const r = Number.parseInt(c.substring(0, 2), 16);
-  const g = Number.parseInt(c.substring(2, 4), 16);
-  const b = Number.parseInt(c.substring(4, 6), 16);
-  return (r * 299 + g * 587 + b * 114) / 1000 > 140;
-}
-
-/** Brighten a hex colour by a factor (1.0 = no change, 1.25 = 25% brighter). Clamps at #ffffff. */
-function brightenColor(hex: string, factor: number): string {
-  if (!hex.startsWith('#') || hex.length < 7) return hex;
-  const c = hex.replace('#', '');
-  const r = Math.min(255, Math.round(Number.parseInt(c.substring(0, 2), 16) * factor));
-  const g = Math.min(255, Math.round(Number.parseInt(c.substring(2, 4), 16) * factor));
-  const b = Math.min(255, Math.round(Number.parseInt(c.substring(4, 6), 16) * factor));
-  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-}
-
-/** Compute relative luminance of a hex colour (0–1 scale). */
-function luminance(hex: string): number {
-  if (!hex.startsWith('#') || hex.length < 7) return 0;
-  const c = hex.replace('#', '');
-  const srgb = [
-    Number.parseInt(c.substring(0, 2), 16) / 255,
-    Number.parseInt(c.substring(2, 4), 16) / 255,
-    Number.parseInt(c.substring(4, 6), 16) / 255,
-  ].map(v => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
-  return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
-}
-
-/** WCAG contrast ratio between two hex colours. */
-function contrastRatio(fg: string, bg: string): number {
-  const l1 = luminance(fg);
-  const l2 = luminance(bg);
-  const lighter = Math.max(l1, l2);
-  const darker = Math.min(l1, l2);
-  return (lighter + 0.05) / (darker + 0.05);
-}
-
-/**
- * Ensure muted text meets a minimum contrast ratio against the background.
- * If contrast is too low, progressively brighten (on dark bg) or darken (on light bg) until it meets the target.
- */
-function ensureContrast(fgHex: string, bgHex: string, minRatio = 4): string {
-  if (!fgHex.startsWith('#') || !bgHex.startsWith('#')) return fgHex;
-  const ratio = contrastRatio(fgHex, bgHex);
-  if (ratio >= minRatio) return fgHex;
-
-  const bgIsLight = luminance(bgHex) > 0.5;
-  let boosted = fgHex;
-  for (let step = 0; step < 20; step++) {
-    const factor = bgIsLight ? 1 - (step + 1) * 0.05 : 1 + (step + 1) * 0.08;
-    boosted = bgIsLight ? darkenColor(fgHex, factor) : brightenColor(fgHex, factor);
-    if (contrastRatio(boosted, bgHex) >= minRatio) break;
-  }
-  return boosted;
-}
-
-/** Darken a hex colour by a factor (0.9 = 10% darker). */
-function darkenColor(hex: string, factor: number): string {
-  if (!hex.startsWith('#') || hex.length < 7) return hex;
-  const c = hex.replace('#', '');
-  const r = Math.max(0, Math.round(Number.parseInt(c.substring(0, 2), 16) * factor));
-  const g = Math.max(0, Math.round(Number.parseInt(c.substring(2, 4), 16) * factor));
-  const b = Math.max(0, Math.round(Number.parseInt(c.substring(4, 6), 16) * factor));
-  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-}

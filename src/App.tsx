@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Sidebar from './components/Sidebar';
 import SlideCanvas from './components/SlideCanvas';
 import { useCarousel } from './hooks/useCarousel';
-import { exportToPdf, exportToPngs } from './utils/pdfExport';
+import { useExport } from './hooks/useExport';
 
 export default function App() {
   const {
@@ -13,7 +13,8 @@ export default function App() {
 
   const previewRef = useRef<HTMLDivElement>(null);
   const [previewWidth, setPreviewWidth] = useState(540);
-  const [exporting, setExporting] = useState(false);
+
+  const { exporting, handleExportPdf, handleExportPngs } = useExport(slides, config, SlideCanvas);
 
   // ── Responsive preview width ──
   useEffect(() => {
@@ -35,84 +36,6 @@ export default function App() {
     window.addEventListener('resize', calc);
     return () => window.removeEventListener('resize', calc);
   }, [config.format]);
-
-  // ── Export handlers ──
-  const handleExportPdf = useCallback(async () => {
-    setExporting(true);
-    try {
-      const container = document.createElement('div');
-      container.style.cssText = 'position:fixed;left:0;top:0;z-index:-1;opacity:0;pointer-events:none;';
-      document.body.appendChild(container);
-
-      const { createRoot } = await import('react-dom/client');
-      const elements: HTMLElement[] = [];
-
-      for (let i = 0; i < slides.length; i++) {
-        const wrapper = document.createElement('div');
-        container.appendChild(wrapper);
-
-        const root = createRoot(wrapper);
-        root.render(
-          <SlideCanvas
-            slide={slides[i]}
-            config={config}
-            slideIndex={i}
-            totalSlides={slides.length}
-            renderWidth={1080}
-            fullSize
-          />
-        );
-
-        await new Promise(r => setTimeout(r, 500));
-        const el = wrapper.firstElementChild as HTMLElement;
-        if (el) elements.push(el);
-      }
-
-      await exportToPdf(elements, config.format);
-      container.remove();
-    } catch (err) {
-      console.error('Export failed:', err);
-    }
-    setExporting(false);
-  }, [slides, config]);
-
-  const handleExportPngs = useCallback(async () => {
-    setExporting(true);
-    try {
-      const container = document.createElement('div');
-      container.style.cssText = 'position:fixed;left:0;top:0;z-index:-1;opacity:0;pointer-events:none;';
-      document.body.appendChild(container);
-
-      const { createRoot } = await import('react-dom/client');
-      const elements: HTMLElement[] = [];
-
-      for (let i = 0; i < slides.length; i++) {
-        const wrapper = document.createElement('div');
-        container.appendChild(wrapper);
-
-        const root = createRoot(wrapper);
-        root.render(
-          <SlideCanvas
-            slide={slides[i]}
-            config={config}
-            slideIndex={i}
-            totalSlides={slides.length}
-            renderWidth={1080}
-            fullSize
-          />
-        );
-        await new Promise(r => setTimeout(r, 500));
-        const el = wrapper.firstElementChild as HTMLElement;
-        if (el) elements.push(el);
-      }
-
-      await exportToPngs(elements, config.format);
-      container.remove();
-    } catch (err) {
-      console.error('Export failed:', err);
-    }
-    setExporting(false);
-  }, [slides, config]);
 
   // ── Keyboard navigation ──
   useEffect(() => {
