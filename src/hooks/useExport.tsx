@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import SlideCanvas from '../components/SlideCanvas';
 import type { CarouselConfig, Slide } from '../types';
 import { exportToPdf, exportToPngs } from '../utils/pdfExport';
 
@@ -12,14 +13,6 @@ import { exportToPdf, exportToPngs } from '../utils/pdfExport';
 export function useExport(
   slides: Slide[],
   config: CarouselConfig,
-  SlideCanvas: React.ComponentType<{
-    slide: Slide;
-    config: CarouselConfig;
-    slideIndex: number;
-    totalSlides: number;
-    renderWidth: number;
-    fullSize?: boolean;
-  }>,
 ) {
   const [exporting, setExporting] = useState(false);
 
@@ -64,7 +57,7 @@ export function useExport(
       elements,
       cleanup: () => container.remove(),
     };
-  }, [slides, config, SlideCanvas]);
+  }, [slides, config]);
 
   const handleExportPdf = useCallback(async () => {
     setExporting(true);

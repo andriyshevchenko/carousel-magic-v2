@@ -63,16 +63,7 @@ export interface Slide {
   codeCaption?: string;
   codeTextAbove?: string;   // arbitrary text/bullets shown above the code block
   codeTextBelow?: string;   // arbitrary text shown below the code block
-  // annotations / arrows
-  annotations?: Annotation[];
-}
 
-export interface Annotation {
-  id: string;
-  text: string;
-  x: number;       // % from left
-  y: number;       // % from top
-  arrowTo?: { x: number; y: number };
 }
 
 export interface CarouselConfig {
@@ -107,3 +98,6 @@ export interface CarouselState {
   slides: Slide[];
   activeSlideIndex: number;
 }
+
+export const PORTRAIT_FORMAT: SlideFormat = '1080x1350';
+export const SQUARE_FORMAT: SlideFormat = '1080x1080';

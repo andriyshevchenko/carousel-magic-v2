@@ -1,7 +1,7 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { FONT_SETS } from '../data/fonts';
 import type { CarouselConfig, CarouselState, Slide, SlideType } from '../types';
-import { uid, DEFAULT_CONFIG, parseCarouselJson, serializeCarousel } from '../utils/carouselIO';
+import { DEFAULT_CONFIG, parseCarouselJson, serializeCarousel, uid } from '../utils/carouselIO';
 
 function defaultSlides(): Slide[] {
     return [
@@ -121,27 +121,29 @@ export function useCarousel() {
         URL.revokeObjectURL(url);
     }, [state.config, state.slides]);
 
-    const importJson = useCallback((file: File) => {
-        file.text().then((text) => {
-            try {
-                const { config, slides, warnings } = parseCarouselJson(text);
+    const importJson = useCallback(async (file: File) => {
+        try {
+            const text = await file.text();
+            const { config, slides, warnings } = parseCarouselJson(text);
 
-                setState({
-                    config,
-                    slides,
-                    activeSlideIndex: 0,
-                });
+            setState({
+                config,
+                slides,
+                activeSlideIndex: 0,
+            });
 
-                if (warnings.length > 0) {
-                    console.debug('[Carousel Import] Auto-fixes applied:', warnings);
-                }
-            } catch (e) {
-                alert(`Failed to parse JSON: ${e instanceof Error ? e.message : 'Unknown error'}`);
+            if (warnings.length > 0) {
+                console.debug('[Carousel Import] Auto-fixes applied:', warnings);
             }
-        });
+        } catch (e) {
+            alert(`Failed to parse JSON: ${e instanceof Error ? e.message : 'Unknown error'}`);
+        }
     }, []);
 
-    const currentFont = FONT_SETS.find(f => f.id === state.config.fontSetId) ?? FONT_SETS[0];
+    const currentFont = useMemo(
+        () => FONT_SETS.find(f => f.id === state.config.fontSetId) ?? FONT_SETS[0],
+        [state.config.fontSetId]
+    );
 
     return {
         state,

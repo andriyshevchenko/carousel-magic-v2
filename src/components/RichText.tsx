@@ -47,7 +47,7 @@ interface TextSegment {
   value: string;
 }
 
-export function parseRichText(text: string): TextSegment[] {
+function parseRichText(text: string): TextSegment[] {
   const parts: TextSegment[] = [];
   const regex = /(\*\*(.+?)\*\*|`(.+?)`)/g;
   let lastIndex = 0;

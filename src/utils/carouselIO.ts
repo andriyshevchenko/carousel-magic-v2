@@ -4,7 +4,7 @@ import type { CarouselConfig, Slide } from '../types';
 export const uid = () => Math.random().toString(36).slice(2, 10);
 
 /** Ensure a bullet line starts with • or - */
-export const formatBullet = (b: string) =>
+const formatBullet = (b: string) =>
     b.startsWith('•') || b.startsWith('-') ? b : `• ${b}`;
 
 export const DEFAULT_CONFIG: CarouselConfig = {

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { FontSet, Theme } from '../types';
 import { highlightCode } from '../utils/codeHighlight';
 
@@ -13,12 +13,13 @@ interface CodeBlockProps {
 
 export default function CodeBlock({ code, language, theme, fontSet, caption, scale }: CodeBlockProps) {
   const codeRef = useRef<HTMLPreElement>(null);
+  const syntaxKey = useMemo(() => JSON.stringify(theme.syntax), [theme.syntax]);
 
   useEffect(() => {
     if (codeRef.current) {
       codeRef.current.innerHTML = highlightCode(code, language, theme.syntax);
     }
-  }, [code, language, theme]);
+  }, [code, language, syntaxKey, theme.editorBg]);
 
   const s = scale;
   const dotSize = 12 * s;

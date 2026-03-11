@@ -1,12 +1,14 @@
+import { memo } from 'react';
 import { FONT_SETS } from '../data/fonts';
 import { getTheme } from '../data/themes';
-import type { CarouselConfig, FontSet, Slide, Theme } from '../types';
+import { PORTRAIT_FORMAT, type CarouselConfig, type FontSet, type Slide, type Theme } from '../types';
 import { brightenColor, isLight } from '../utils/colors';
 import { getCanvasDimensions, isGradient, resolveTheme } from '../utils/slideLayout';
 import CodeBlock from './CodeBlock';
 import RichText from './RichText';
-import TextBlock from './TextBlock';
 import type { TextBlockSizes } from './TextBlock';
+import TextBlock from './TextBlock';
+import { SLIDE } from '../constants/slideLayout';
 
 interface SlideCanvasProps {
   slide: Slide;
@@ -19,7 +21,7 @@ interface SlideCanvasProps {
   fullSize?: boolean;
 }
 
-export default function SlideCanvas({ slide, config, slideIndex, totalSlides, renderWidth, fullSize }: SlideCanvasProps) {
+function SlideCanvas({ slide, config, slideIndex, totalSlides, renderWidth, fullSize }: SlideCanvasProps) {
   const rawTheme = getTheme(config.themeId);
   const fontSet = FONT_SETS.find(f => f.id === config.fontSetId) ?? FONT_SETS[0];
   const [canvasW, canvasH] = getCanvasDimensions(config.format);
@@ -51,7 +53,7 @@ export default function SlideCanvas({ slide, config, slideIndex, totalSlides, re
         <div style={{
           position: 'absolute', inset: 0,
           backgroundImage: `radial-gradient(${theme.fg} 0.5px, transparent 0.5px)`,
-          backgroundSize: `${20 * scale}px ${20 * scale}px`,
+          backgroundSize: `${SLIDE.PATTERN_GRID * scale}px ${SLIDE.PATTERN_GRID * scale}px`,
           opacity: theme.patternOpacity,
           pointerEvents: 'none',
         }} />
@@ -61,16 +63,16 @@ export default function SlideCanvas({ slide, config, slideIndex, totalSlides, re
       {config.showAuthorBadge && (
         <div style={{
           position: 'absolute',
-          top: 28 * scale,
-          left: 36 * scale,
+          top: SLIDE.EDGE_INSET * scale,
+          left: SLIDE.SIDE_INSET * scale,
           display: 'flex',
           alignItems: 'center',
-          gap: 14 * scale,
+          gap: SLIDE.BADGE_GAP * scale,
           zIndex: 10,
         }}>
           <div style={{
-            width: 60 * scale,
-            height: 60 * scale,
+            width: SLIDE.AVATAR_SIZE * scale,
+            height: SLIDE.AVATAR_SIZE * scale,
             borderRadius: '50%',
             background: theme.accent,
             color: isLight(theme.accent) ? '#000' : '#fff',
@@ -78,16 +80,16 @@ export default function SlideCanvas({ slide, config, slideIndex, totalSlides, re
             alignItems: 'center',
             justifyContent: 'center',
             fontFamily: `'${fontSet.heading}', sans-serif`,
-            fontSize: 22 * scale,
+            fontSize: SLIDE.AUTHOR_INITIALS_SIZE * scale,
             fontWeight: 700,
             letterSpacing: '0.02em',
           }}>
             {config.authorInitials}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 * scale }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: SLIDE.AUTHOR_COLUMN_GAP * scale }}>
             {config.authorName && (
               <span style={{
-                fontSize: 22 * scale,
+                fontSize: SLIDE.AUTHOR_NAME_SIZE * scale,
                 color: theme.fg,
                 fontWeight: 700,
                 fontFamily: `'${fontSet.heading}', sans-serif`,
@@ -97,7 +99,7 @@ export default function SlideCanvas({ slide, config, slideIndex, totalSlides, re
               </span>
             )}
             <span style={{
-              fontSize: 17 * scale,
+              fontSize: SLIDE.AUTHOR_HANDLE_SIZE * scale,
               color: theme.muted,
               fontWeight: 500,
               lineHeight: 1.2,
@@ -119,9 +121,9 @@ export default function SlideCanvas({ slide, config, slideIndex, totalSlides, re
         justifyContent: 'center',
         alignItems: 'center',
         padding: (() => {
-          const top = (config.showAuthorBadge ? 110 : 80) * scale;
-          const sides = (slide.type === 'code' ? 48 : 60) * scale;
-          const bottom = 100 * scale;
+          const top = (config.showAuthorBadge ? SLIDE.CONTENT_TOP_WITH_BADGE : SLIDE.CONTENT_TOP_NO_BADGE) * scale;
+          const sides = (slide.type === 'code' ? SLIDE.CONTENT_SIDE_CODE : SLIDE.CONTENT_SIDE_DEFAULT) * scale;
+          const bottom = SLIDE.CONTENT_BOTTOM * scale;
           return `${top}px ${sides}px ${bottom}px`;
         })(),
         overflow: 'hidden',
@@ -133,7 +135,7 @@ export default function SlideCanvas({ slide, config, slideIndex, totalSlides, re
           <ContentSlide slide={slide} theme={theme} fontSet={fontSet} scale={scale} />
         )}
         {slide.type === 'code' && (
-          <CodeSlide slide={slide} theme={theme} fontSet={fontSet} scale={scale} isTall={config.format === '1080x1350'} />
+          <CodeSlide slide={slide} theme={theme} fontSet={fontSet} scale={scale} isTall={config.format === PORTRAIT_FORMAT} />
         )}
         {slide.type === 'cta' && (
           <CtaSlide slide={slide} theme={theme} fontSet={fontSet} scale={scale} config={config} />
@@ -144,21 +146,21 @@ export default function SlideCanvas({ slide, config, slideIndex, totalSlides, re
       {config.showNavDots && (
         <div style={{
           position: 'absolute',
-          bottom: 28 * scale,
+          bottom: SLIDE.EDGE_INSET * scale,
           left: '50%',
           zIndex: 10,
           transform: 'translateX(-50%)',
           display: 'flex',
-          gap: 8 * scale,
+          gap: SLIDE.NAV_DOT_GAP * scale,
           alignItems: 'center',
         }}>
           {Array.from({ length: totalSlides }).map((_, i) => (
             <div
               key={i}
               style={{
-                width: i === slideIndex ? 26 * scale : 10 * scale,
-                height: 10 * scale,
-                borderRadius: 5 * scale,
+                width: i === slideIndex ? SLIDE.NAV_DOT_ACTIVE_WIDTH * scale : SLIDE.NAV_DOT_SIZE * scale,
+                height: SLIDE.NAV_DOT_SIZE * scale,
+                borderRadius: SLIDE.NAV_DOT_RADIUS * scale,
                 background: i === slideIndex ? theme.accent : `${theme.muted}55`,
                 transition: 'all 0.2s ease',
               }}
@@ -171,16 +173,16 @@ export default function SlideCanvas({ slide, config, slideIndex, totalSlides, re
       {config.showSlideNumbers && (
         <div style={{
           position: 'absolute',
-          bottom: 28 * scale,
-          right: (config.showSwipeHint && slideIndex < totalSlides - 1) ? 100 * scale : 36 * scale,
-          fontSize: 14 * scale,
+          bottom: SLIDE.EDGE_INSET * scale,
+          right: (config.showSwipeHint && slideIndex < totalSlides - 1) ? SLIDE.SLIDE_NUM_OFFSET_WITH_SWIPE * scale : SLIDE.SIDE_INSET * scale,
+          fontSize: SLIDE.SLIDE_NUM_FONT_SIZE * scale,
           color: theme.muted,
           fontWeight: 500,
           fontFamily: `'${fontSet.body}', sans-serif`,
           opacity: 0.7,
           display: 'flex',
           alignItems: 'center',
-          height: 52 * scale,          zIndex: 10,        }}>
+          height: SLIDE.SLIDE_NUM_HEIGHT * scale,          zIndex: 10,        }}>
           {slideIndex + 1}/{totalSlides}
         </div>
       )}
@@ -189,11 +191,11 @@ export default function SlideCanvas({ slide, config, slideIndex, totalSlides, re
       {config.showSwipeHint && slideIndex < totalSlides - 1 && (
         <div style={{
           position: 'absolute',
-          bottom: 28 * scale,
-          right: 32 * scale,
+          bottom: SLIDE.EDGE_INSET * scale,
+          right: SLIDE.SWIPE_BTN_RIGHT * scale,
           zIndex: 10,
-          width: 52 * scale,
-          height: 52 * scale,
+          width: SLIDE.SWIPE_BTN_SIZE * scale,
+          height: SLIDE.SWIPE_BTN_SIZE * scale,
           borderRadius: '50%',
           background: theme.accent,
           display: 'flex',
@@ -202,7 +204,7 @@ export default function SlideCanvas({ slide, config, slideIndex, totalSlides, re
           boxShadow: `0 2px ${10 * scale}px ${theme.accent}44`,
         }}>
           <span style={{
-            fontSize: 22 * scale,
+            fontSize: SLIDE.SWIPE_ARROW_SIZE * scale,
             color: isLight(theme.accent) ? '#000' : '#fff',
             fontWeight: 700,
             lineHeight: 1,
@@ -213,6 +215,15 @@ export default function SlideCanvas({ slide, config, slideIndex, totalSlides, re
     </div>
   );
 }
+
+export default memo(SlideCanvas, (prev, next) =>
+  prev.slide === next.slide &&
+  prev.config === next.config &&
+  prev.slideIndex === next.slideIndex &&
+  prev.totalSlides === next.totalSlides &&
+  prev.renderWidth === next.renderWidth &&
+  prev.fullSize === next.fullSize
+);
 
 /* ── Slide type components ─────────────────────────── */
 
@@ -244,9 +255,9 @@ function HookSlide({ slide, theme, fontSet, scale }: { slide: Slide; theme: Them
       )}
       {/* Decorative accent line */}
       <div style={{
-        width: 180 * scale,
-        height: 6 * scale,
-        borderRadius: 3 * scale,
+        width: SLIDE.ACCENT_LINE_WIDTH * scale,
+        height: SLIDE.ACCENT_LINE_HEIGHT * scale,
+        borderRadius: SLIDE.ACCENT_LINE_RADIUS * scale,
         background: theme.accent,
         margin: `${28 * scale}px auto 0`,
       }} />
@@ -428,9 +439,9 @@ function CtaSlide({ slide, theme, fontSet, scale, config }: { slide: Slide; them
       )}
       {/* Decorative accent line */}
       <div style={{
-        width: 180 * scale,
-        height: 6 * scale,
-        borderRadius: 3 * scale,
+        width: SLIDE.ACCENT_LINE_WIDTH * scale,
+        height: SLIDE.ACCENT_LINE_HEIGHT * scale,
+        borderRadius: SLIDE.ACCENT_LINE_RADIUS * scale,
         background: theme.accent,
         margin: `${32 * scale}px auto 0`,
       }} />

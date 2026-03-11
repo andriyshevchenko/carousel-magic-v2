@@ -68,11 +68,6 @@ pre[class*="language-"] {
   @apply w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold;
 }
 
-/* ── Annotation arrow ── */
-.annotation-arrow {
-  pointer-events: none;
-}
-
 /* ── Input styling in sidebar ── */
 .sidebar-input {
   @apply w-full bg-zinc-800/60 border border-zinc-700/50 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/50 transition-colors;

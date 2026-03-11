@@ -25,12 +25,12 @@ interface TextBlockProps {
 }
 
 /** Check if a line starts with a bullet marker (•, -, *). */
-export function isBulletLine(line: string): boolean {
+function isBulletLine(line: string): boolean {
   return /^[•\-*]\s/.test(line);
 }
 
 /** Strip the leading bullet marker from a line. */
-export function stripBullet(line: string): string {
+function stripBullet(line: string): string {
   return line.replace(/^[•\-*]\s*/, '');
 }
 

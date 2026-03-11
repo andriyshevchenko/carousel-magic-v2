@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import ErrorBoundary from './components/ErrorBoundary';
 import Sidebar from './components/Sidebar';
 import SlideCanvas from './components/SlideCanvas';
 import { useCarousel } from './hooks/useCarousel';
 import { useExport } from './hooks/useExport';
+import { PORTRAIT_FORMAT } from './types';
 
 export default function App() {
   const {
@@ -14,7 +16,22 @@ export default function App() {
   const previewRef = useRef<HTMLDivElement>(null);
   const [previewWidth, setPreviewWidth] = useState(540);
 
-  const { exporting, handleExportPdf, handleExportPngs } = useExport(slides, config, SlideCanvas);
+  const { exporting, handleExportPdf, handleExportPngs } = useExport(slides, config);
+
+  const slideActions = useMemo(() => ({
+    update: updateSlide,
+    add: addSlide,
+    remove: removeSlide,
+    move: moveSlide,
+    select: setActiveSlide,
+  }), [updateSlide, addSlide, removeSlide, moveSlide, setActiveSlide]);
+
+  const exportActions = useMemo(() => ({
+    exportPdf: handleExportPdf,
+    exportPngs: handleExportPngs,
+    exportJson: exportJson,
+    importJson: importJson,
+  }), [handleExportPdf, handleExportPngs, exportJson, importJson]);
 
   // ── Responsive preview width ──
   useEffect(() => {
@@ -23,7 +40,7 @@ export default function App() {
         const container = previewRef.current.parentElement;
         if (container) {
           const avail = container.clientWidth - 80; // padding
-          const [cw, ch] = config.format === '1080x1350' ? [1080, 1350] : [1080, 1080];
+          const [cw, ch] = config.format === PORTRAIT_FORMAT ? [1080, 1350] : [1080, 1080];
           const maxH = container.clientHeight - 120;
           const scaleByW = avail / cw;
           const scaleByH = maxH / ch;
@@ -56,16 +73,9 @@ export default function App() {
         activeSlide={activeSlide}
         activeSlideIndex={activeSlideIndex}
         onConfigChange={setConfig}
-        onSlideUpdate={updateSlide}
-        onAddSlide={addSlide}
-        onRemoveSlide={removeSlide}
-        onMoveSlide={moveSlide}
-        onSelectSlide={setActiveSlide}
+        slideActions={slideActions}
+        exportActions={exportActions}
         onLoadTemplate={loadFromTemplate}
-        onExportPdf={handleExportPdf}
-        onExportPngs={handleExportPngs}
-        onExportJson={exportJson}
-        onImportJson={importJson}
       />
 
       {/* ── Main preview area ── */}
@@ -112,13 +122,15 @@ export default function App() {
                 boxShadow: '0 0 80px rgba(0,0,0,0.5), 0 0 40px rgba(0,0,0,0.3)',
               }}
             >
-              <SlideCanvas
-                slide={activeSlide}
-                config={config}
-                slideIndex={activeSlideIndex}
-                totalSlides={slides.length}
-                renderWidth={previewWidth}
-              />
+              <ErrorBoundary>
+                <SlideCanvas
+                  slide={activeSlide}
+                  config={config}
+                  slideIndex={activeSlideIndex}
+                  totalSlides={slides.length}
+                  renderWidth={previewWidth}
+                />
+              </ErrorBoundary>
             </div>
           )}
           </div>
@@ -136,15 +148,17 @@ export default function App() {
                     ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-zinc-900'
                     : 'opacity-60 hover:opacity-90'
                 }`}
-                style={{ width: config.format === '1080x1350' ? 56 : 64, height: config.format === '1080x1350' ? 70 : 64 }}
+                style={{ width: config.format === PORTRAIT_FORMAT ? 56 : 64, height: config.format === PORTRAIT_FORMAT ? 70 : 64 }}
               >
-                <SlideCanvas
-                  slide={s}
-                  config={config}
-                  slideIndex={i}
-                  totalSlides={slides.length}
-                  renderWidth={config.format === '1080x1350' ? 56 : 64}
-                />
+                <ErrorBoundary>
+                  <SlideCanvas
+                    slide={s}
+                    config={config}
+                    slideIndex={i}
+                    totalSlides={slides.length}
+                    renderWidth={config.format === PORTRAIT_FORMAT ? 56 : 64}
+                  />
+                </ErrorBoundary>
               </button>
             ))}
           </div>

@@ -6,22 +6,30 @@ import SlideEditor from './SlideEditor';
 import TemplateManager from './TemplateManager';
 import ThemePicker from './ThemePicker';
 
+interface SlideActions {
+  update: (id: string, partial: Partial<Slide>) => void;
+  add: (type: SlideType, afterIndex?: number) => void;
+  remove: (id: string) => void;
+  move: (from: number, to: number) => void;
+  select: (index: number) => void;
+}
+
+interface ExportActions {
+  exportPdf: () => void;
+  exportPngs: () => void;
+  exportJson: () => void;
+  importJson: (file: File) => void;
+}
+
 interface SidebarProps {
   config: CarouselConfig;
   slides: Slide[];
   activeSlide: Slide;
   activeSlideIndex: number;
   onConfigChange: (partial: Partial<CarouselConfig>) => void;
-  onSlideUpdate: (id: string, partial: Partial<Slide>) => void;
-  onAddSlide: (type: SlideType, afterIndex?: number) => void;
-  onRemoveSlide: (id: string) => void;
-  onMoveSlide: (from: number, to: number) => void;
-  onSelectSlide: (idx: number) => void;
+  slideActions: SlideActions;
+  exportActions: ExportActions;
   onLoadTemplate: (config: CarouselConfig, slides: Slide[]) => void;
-  onExportPdf: () => void;
-  onExportPngs: () => void;
-  onExportJson: () => void;
-  onImportJson: (file: File) => void;
 }
 
 type Tab = 'slides' | 'design' | 'settings' | 'templates';
@@ -30,8 +38,8 @@ export default function Sidebar(props: SidebarProps) {
   const [tab, setTab] = useState<Tab>('slides');
   const {
     config, slides, activeSlide, activeSlideIndex,
-    onConfigChange, onSlideUpdate, onAddSlide, onRemoveSlide, onMoveSlide, onSelectSlide,
-    onLoadTemplate, onExportPdf, onExportPngs, onExportJson, onImportJson,
+    onConfigChange, slideActions, exportActions,
+    onLoadTemplate,
   } = props;
 
   const tabs: { id: Tab; label: string; icon: string }[] = [
@@ -79,7 +87,7 @@ export default function Sidebar(props: SidebarProps) {
                 {slides.map((s, i) => (
                   <div
                     key={s.id}
-                    onClick={() => onSelectSlide(i)}
+                    onClick={() => slideActions.select(i)}
                     className={`flex items-center gap-2 rounded-lg px-3 py-2 cursor-pointer transition-colors ${
                       i === activeSlideIndex
                         ? 'bg-blue-600/20 border border-blue-500/30'
@@ -93,21 +101,21 @@ export default function Sidebar(props: SidebarProps) {
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100">
                       {i > 0 && (
                         <button
-                          onClick={e => { e.stopPropagation(); onMoveSlide(i, i - 1); }}
+                          onClick={e => { e.stopPropagation(); slideActions.move(i, i - 1); }}
                           className="text-zinc-500 hover:text-zinc-300 text-xs cursor-pointer"
                           title="Move up"
                         >↑</button>
                       )}
                       {i < slides.length - 1 && (
                         <button
-                          onClick={e => { e.stopPropagation(); onMoveSlide(i, i + 1); }}
+                          onClick={e => { e.stopPropagation(); slideActions.move(i, i + 1); }}
                           className="text-zinc-500 hover:text-zinc-300 text-xs cursor-pointer"
                           title="Move down"
                         >↓</button>
                       )}
                       {slides.length > 1 && (
                         <button
-                          onClick={e => { e.stopPropagation(); onRemoveSlide(s.id); }}
+                          onClick={e => { e.stopPropagation(); slideActions.remove(s.id); }}
                           className="text-zinc-500 hover:text-red-400 text-xs cursor-pointer"
                           title="Remove"
                         >✕</button>
@@ -122,7 +130,7 @@ export default function Sidebar(props: SidebarProps) {
                 {(['hook', 'content', 'code', 'cta'] as SlideType[]).map(type => (
                   <button
                     key={type}
-                    onClick={() => onAddSlide(type, activeSlideIndex)}
+                    onClick={() => slideActions.add(type, activeSlideIndex)}
                     className="flex-1 text-[10px] text-zinc-400 hover:text-zinc-200 bg-zinc-800/40 hover:bg-zinc-800/80 rounded-md py-1.5 transition-colors cursor-pointer"
                   >
                     + {type}
@@ -139,7 +147,7 @@ export default function Sidebar(props: SidebarProps) {
                 </div>
                 <SlideEditor
                   slide={activeSlide}
-                  onUpdate={p => onSlideUpdate(activeSlide.id, p)}
+                  onUpdate={p => slideActions.update(activeSlide.id, p)}
                 />
               </div>
             )}
@@ -273,20 +281,20 @@ export default function Sidebar(props: SidebarProps) {
       {/* ── Export buttons (always visible) ── */}
       <div className="border-t border-zinc-800/50 p-4 space-y-2">
         <button
-          onClick={onExportPdf}
+          onClick={exportActions.exportPdf}
           className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-semibold rounded-lg py-2.5 transition-all cursor-pointer shadow-lg shadow-blue-900/30"
         >
           📄 Export PDF
         </button>
         <button
-          onClick={onExportPngs}
+          onClick={exportActions.exportPngs}
           className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-sm font-medium rounded-lg py-2 transition-colors cursor-pointer"
         >
           🖼 Export PNGs
         </button>
         <div className="flex gap-2">
           <button
-            onClick={onExportJson}
+            onClick={exportActions.exportJson}
             className="flex-1 bg-zinc-800/60 hover:bg-zinc-700 text-zinc-300 text-xs font-medium rounded-lg py-1.5 transition-colors cursor-pointer"
           >
             📋 Export JSON
@@ -299,7 +307,7 @@ export default function Sidebar(props: SidebarProps) {
               className="hidden"
               onChange={e => {
                 const f = e.target.files?.[0];
-                if (f) { onImportJson(f); }
+                if (f) { exportActions.importJson(f); }
                 e.target.value = '';
               }}
             />
