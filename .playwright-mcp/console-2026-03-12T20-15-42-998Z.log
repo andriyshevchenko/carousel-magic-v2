@@ -1,0 +1,2 @@
+[   32329ms] [WARNING] env.wasm.numThreads is set to 12, but this will not work unless you enable crossOriginIsolated mode. See https://web.dev/cross-origin-isolation-guide/ for more info. @ http://localhost:5174/node_modules/.vite/deps/ort.bundle.min-O4EJ5WEI.js?v=6e21d105:2509
+[   32330ms] [WARNING] WebAssembly multi-threading is not supported in the current environment. Falling back to single-threading. @ http://localhost:5174/node_modules/.vite/deps/ort.bundle.min-O4EJ5WEI.js?v=6e21d105:2509
